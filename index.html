@@ -118,6 +118,51 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .arcg .st{font-size:12px;font-weight:700;color:var(--red)}
 .arcg b{font:700 16px/1.35 "Noto Serif KR",serif}
 .arcg span{font-size:13px;color:var(--mute)}
+/* 홈: 신문 1면 (큰 화면에서는 한 화면에 맞춤) */
+.front{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:34px;padding:18px 0 22px}
+.front h3{font:700 18px/1.3 "Noto Serif KR",serif;margin:0 0 4px;border-bottom:2px solid var(--ink);padding-bottom:6px}
+.fmain{display:flex;flex-direction:column;gap:16px;min-height:0}
+.flead{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:28px;border-bottom:1px solid var(--rule);padding-bottom:16px}
+.fleadL{display:flex;flex-direction:column;gap:8px}
+.fkick{color:var(--red);font-weight:700;font-size:14px}
+.fH{font:700 clamp(26px,2.2vw,38px)/1.25 "Noto Serif KR",serif;display:block}
+.fleadP{margin:0;font-size:16px;line-height:1.65;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fsrc{font-size:13px;color:var(--mute)}
+.fkey{display:flex;flex-direction:column;border-left:1px solid var(--hair);padding-left:24px}
+.fkey>b{font:700 18px "Noto Serif KR",serif;padding-bottom:6px}
+.fkey p{margin:0;padding:8px 0;border-top:1px solid var(--hair);font-size:15px;line-height:1.5}
+.fkey .n{color:var(--red)}
+.fmore{margin-top:auto;padding-top:8px;font-size:14px;font-weight:700;color:var(--red);text-decoration:none}
+.fmore:hover{text-decoration:underline}
+.fcols{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.fcol{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden}
+.ftop{display:flex;flex-direction:column;gap:6px}
+.fh{font:700 18px/1.35 "Noto Serif KR",serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fsum{margin:0;font-size:14px;line-height:1.55;color:var(--mute);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:15px;line-height:1.45;padding-top:8px;border-top:1px solid var(--hair)}
+.front a.orig{text-decoration:none;color:var(--ink)}
+.front a.orig:hover .fH,.front a.orig:hover .fh,.front a.orig:hover .fl{text-decoration:underline}
+.fnone{margin:0;font-size:14px;color:var(--mute)}
+.fside{display:flex;flex-direction:column;gap:10px;border-left:1px solid var(--rule);padding-left:28px;min-height:0;overflow:hidden}
+.faa{background:var(--aa);color:#fff;padding:14px 16px;display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.faa b{font:700 18px "Noto Serif KR",serif}.faa span{font-size:15px}
+.faa a{color:#fff}.faa .fmore{color:#fff;margin-top:4px}
+.fps{display:block;font-size:15px;line-height:1.45;padding:8px 0;border-top:1px solid var(--hair);text-decoration:none;color:var(--ink)}
+.fps:first-of-type{border-top:0}
+.fps small{display:block;font-size:12px;color:var(--slate)}
+.fps:hover{text-decoration:underline}
+.fcal{margin:0;font-size:15px;line-height:1.5}
+@media(min-width:1100px) and (min-height:700px){
+ body.fit .wrap{max-width:none;height:100vh;display:flex;flex-direction:column;padding:0 40px}
+ body.fit .mast{padding:14px 0 10px}
+ body.fit .mast h1{font-size:38px}
+ body.fit .mrow{margin-bottom:6px}
+ body.fit main{flex:1;min-height:0;overflow:hidden}
+ body.fit .front{height:100%;box-sizing:border-box}
+ body.fit .foot{display:none}
+}
+@media(max-width:1100px){.front{grid-template-columns:minmax(0,1fr)}.fside{border-left:0;padding-left:0}.fcols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.flead{grid-template-columns:minmax(0,1fr)}.fkey{border-left:0;padding-left:0}.fcols{grid-template-columns:minmax(0,1fr)}}
 /* 지난 브리핑 */
 .arc{padding:24px 0 30px;border-bottom:3px solid var(--rule)}
 .arc .tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
@@ -226,15 +271,39 @@ async function homeView(){
  const latest=IDX[0];
  if(!latest){main.innerHTML=`<p class="msg">아직 발행된 브리핑이 없습니다.</p>`;dl.textContent="";return}
  let D;try{D=await getDay(latest.date)}catch(e){main.innerHTML=`<p class="msg">최신 브리핑을 불러오지 못했습니다.</p>`;return}
- dl.textContent=`최신호 ${fmt(D.date,D.weekday)}`;
- const cats=CATS.slice(1).map(([k,n])=>{const its=(D.news||[]).filter(x=>x.c===k);
-  return `<button type="button" class="cat" data-k="${k}"><b>${n}</b><span class="n">${its.length}<small class="lbl"> 건</small></span><span class="t">${its.length?esc(its[0].t):"오늘은 기사가 없습니다"}</span></button>`}).join("");
- main.innerHTML=`<section class="top"><div><h2>오늘의 핵심</h2>${keyHTML(D)}<a class="more" href="#today">오늘 브리핑 전체 보기 →</a></div>${numsHTML(D)}</section>
- ${aaHTML(D)}
- <section><h2 style="margin-top:26px">분야별 바로가기</h2><div class="cats" style="padding-top:6px">${cats}</div></section>
- <nav class="quick" aria-label="바로가기"><a class="btn" href="#ps">프로젝트 서울 공고·아카이브 보기</a><a class="btn" href="https://www.aaarchigroup.com/news" target="_blank" rel="noopener">AA아키그룹 뉴스룸 ↗</a></nav>
- <section class="recent"><h2>최근 브리핑</h2>${IDX.slice(0,7).map(dayRow).join("")}${IDX.length>7?`<a class="more" href="#archive">지난 브리핑 모두 보기 →</a>`:""}</section>`;
- main.querySelectorAll(".cat").forEach(b=>b.addEventListener("click",()=>{cur=b.dataset.k;try{localStorage.setItem("brief-cat",cur)}catch(err){}location.hash="today"}));
+ let P={};try{const r=await fetch("data/project_seoul.json",{cache:"no-store"});if(r.ok)P=await r.json()}catch(e){}
+ dl.textContent=fmt(D.date,D.weekday);
+ const news=D.news||[];
+ /* 머리기사: 핵심 1번과 가장 많이 겹치는 기사 */
+ const words=t=>new Set(String(t||"").replace(/[^\p{L}\p{N}]+/gu," ").split(" ").filter(w=>w.length>1));
+ const k0=words((D.key&&D.key[0]&&D.key[0].b)||"");
+ let lead=news[0],best=-1;news.forEach(n=>{let c=0;words(n.t).forEach(w=>{if(k0.has(w))c++});if(c>best){best=c;lead=n}});
+ const catName=Object.fromEntries(CATS);
+ const src=n=>n.s&&n.s[0]?`${esc(n.s[0][0])} · ${esc(n.s[0][1])}`:"";
+ const link=(n,cls,label)=>n.s&&n.s[0]?orig(n.s[0][2],n.s[0][0],n.t,`<span class="${cls}">${label}</span>`):`<span class="${cls}">${label}</span>`;
+ const COLS=[["시공 수주",["build"]],["설계·서울시 공모",["design","seoul"]],["공공 발주·경기",["public","market"]],["업계·금융",["biz"]]];
+ const cols=COLS.map(([name,ks])=>{
+  const its=news.filter(n=>ks.includes(n.c)&&n!==lead);
+  if(!its.length)return `<div class="fcol"><h3>${name}</h3><p class="fnone">오늘은 새 기사가 없어요.</p></div>`;
+  const [f,...rest]=its;
+  return `<div class="fcol"><h3>${name}</h3><div class="ftop">${link(f,"fh",esc(f.t))}<p class="fsum">${esc(f.p)}</p><span class="fsrc">${src(f)}</span></div>${rest.map(n=>link(n,"fl",esc(n.t))).join("")}</div>`;
+ }).join("");
+ const A=D.aa||{},aaT=A.today||[];
+ const aa=`<div class="faa"><b>AA아키그룹 소식</b>${aaT.length?aaT.slice(0,2).map(x=>orig(x.u,"AA아키그룹 관련 보도",x.t,`<span>${esc(x.t)}</span>`)).join(""):`<span>오늘은 새로 보도된 소식이 없어요.</span>`}<a class="fmore" href="#aa">AA 소식 모아보기 →</a></div>`;
+ const N=(P.notices||[]).slice(0,4);
+ const ps=`<h3>프로젝트 서울 공모알림</h3>${N.length?N.map(x=>`<a class="fps" href="${url(x.u)}" target="_blank" rel="noopener"><small>${esc(String(x.d).slice(5))} · ${esc(x.c)}</small>${esc(x.t)}</a>`).join(""):`<p class="fnone">불러온 알림이 없어요.</p>`}<a class="fmore" href="#ps">공고·아카이브 전체 →</a>`;
+ const cal=(D.cal||[]).slice(0,3);
+ const calH=cal.length?`<h3>다가오는 일정</h3>${cal.map(r=>`<p class="fcal"><b>${esc(r[0])}</b> ${esc(r[1])}</p>`).join("")}`:"";
+ main.innerHTML=`<div class="front">
+ <div class="fmain">
+  <article class="flead">
+   <div class="fleadL"><span class="fkick">머리기사 · ${esc(catName[lead.c]||"")}</span>${link(lead,"fH",esc(lead.t))}<p class="fleadP">${esc(lead.p)}</p><span class="fsrc">${src(lead)}</span></div>
+   <div class="fkey"><b>오늘의 핵심</b>${(D.key||[]).map((k,i)=>`<p><b class="n">${i+1}</b> ${esc(k.b)}</p>`).join("")}<a class="fmore" href="#today">오늘 브리핑 전체(요약 포함) →</a></div>
+  </article>
+  <div class="fcols">${cols}</div>
+ </div>
+ <aside class="fside">${aa}${ps}${calH}</aside>
+</div>`;
 }
 
 /* ---------- 날짜별 브리핑 ---------- */
@@ -319,6 +388,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&reader.classList.co
 function setTab(id){["vHome","vToday","vAA","vPS","vArc"].forEach(t=>{const el=document.getElementById(t);if(t===id)el.setAttribute("aria-current","page");else el.removeAttribute("aria-current")})}
 async function route(){
  const h=location.hash.slice(1);
+ document.body.classList.toggle("fit",h===""||h==="home");
  if(h==="archive"){setTab("vArc");arcView();return}
  if(h==="aa"){setTab("vAA");await aaView();return}
  if(h==="ps"){setTab("vPS");await psView();return}
