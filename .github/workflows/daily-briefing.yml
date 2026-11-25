@@ -38,6 +38,9 @@ jobs:
           OPENWEBUI_URL: ${{ vars.OPENWEBUI_URL || 'https://ai.aaarchigroup-ai.com' }}
           OPENWEBUI_MODEL: ${{ vars.OPENWEBUI_MODEL }}
           OPENWEBUI_API_KEY: ${{ secrets.OPENWEBUI_API_KEY }}
+          # 네이버 뉴스 검색 (없으면 건너뜀)
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-6-luna' }}
           BRIEFING_DATE: ${{ github.event.inputs.date }}
