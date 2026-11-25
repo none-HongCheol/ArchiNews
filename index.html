@@ -142,6 +142,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .fl{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;line-height:1.45;padding-top:8px;border-top:1px solid var(--hair)}
 .front a.orig{text-decoration:none;color:var(--ink)}
 .front a.orig:hover .fH,.front a.orig:hover .fh,.front a.orig:hover .fl,.front a.orig:hover .fk{text-decoration:underline}
+.fkc{font-size:11.5px;color:var(--mute);white-space:nowrap;margin-left:4px}
 .fnone{margin:0;font-size:14px;color:var(--mute)}
 .fside{display:flex;flex-direction:column;gap:10px;border-left:1px solid var(--rule);padding-left:28px;min-height:0;overflow:hidden}
 .faa{background:var(--aa);color:#fff;padding:14px 16px;display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
@@ -279,13 +280,13 @@ async function homeView(){
  const words=t=>new Set(String(t||"").replace(/[^\p{L}\p{N}]+/gu," ").split(" ").filter(w=>w.length>1));
  const k0=words((D.key&&D.key[0]&&D.key[0].b)||"");
  let lead=news[0],best=-1;news.forEach(n=>{let c=0;words(n.t).forEach(w=>{if(k0.has(w))c++});if(c>best){best=c;lead=n}});
- /* 오늘의 핵심: 머리기사와 같은 내용은 빼고, 모자라면 다른 분야 첫 기사로 채움 */
- const lw=words(lead&&lead.t);
- const overlap=t=>{let c=0;words(t).forEach(w=>{if(lw.has(w))c++});return c};
- let keys=(D.key||[]).map(k=>({b:k.b,t:k.t,n:null}));
- let drop=-1,dmax=1;keys.forEach((k,i)=>{const o=overlap(k.b+" "+k.t);if(o>dmax){dmax=o;drop=i}});
- if(drop>=0)keys.splice(drop,1);
- for(const [k] of CATS.slice(1)){if(keys.length>=3)break;const n=news.find(x=>x.c===k&&x!==lead&&!keys.some(y=>y.n===x)&&overlap(x.t)<2&&!keys.some(y=>{const a=words(y.b+" "+y.t);let c=0;words(x.t).forEach(w=>{if(a.has(w))c++});return c>=3}));if(n)keys.push({b:n.t,t:"",n})}
+ /* 핵심 뉴스: 머리기사를 뺀 실제 기사 3건. AI 핵심 정리와 가장 닮은 기사를 먼저, 모자라면 분야별 첫 기사 */
+ const sim=(x,y)=>{const a=words(x);let c=0;words(y).forEach(w=>{if(a.has(w))c++});return c};
+ const picks=[];
+ const okPick=n=>n&&n!==lead&&!picks.includes(n)&&sim(lead.t,n.t)<3&&!picks.some(p=>sim(p.t,n.t)>=3);
+ (D.key||[]).forEach(k=>{if(picks.length>=3||sim(k.b+" "+(k.t||""),lead.t)>=3)return;let bn=null,bs=1;news.forEach(n=>{if(!okPick(n))return;const v=sim(k.b+" "+(k.t||""),n.t+" "+(n.p||""));if(v>bs){bs=v;bn=n}});if(bn)picks.push(bn)});
+ for(const [k] of CATS.slice(1)){if(picks.length>=3)break;const n=news.find(x=>x.c===k&&okPick(x));if(n)picks.push(n)}
+ for(const n of news){if(picks.length>=3)break;if(okPick(n))picks.push(n)}
  const catName=Object.fromEntries(CATS);
  const src=n=>n.s&&n.s[0]?`${esc(n.s[0][0])} · ${esc(n.s[0][1])}`:"";
  const link=(n,cls,label)=>n.s&&n.s[0]?orig(n.s[0][2],n.s[0][0],n.t,`<span class="${cls}">${label}</span>`):`<span class="${cls}">${label}</span>`;
@@ -305,7 +306,7 @@ async function homeView(){
  <div class="fmain">
   <article class="flead">
    <div class="fleadL"><span class="fkick">머리기사 · ${esc(catName[lead.c]||"")}</span>${link(lead,"fH",esc(lead.t))}<p class="fleadP">${esc(lead.p)}</p><span class="fsrc">${src(lead)}</span></div>
-   <div class="fkey"><b>오늘의 핵심</b>${keys.slice(0,3).map((k,i)=>`<p><b class="n">${i+1}</b> ${k.n?link(k.n,"fk",esc(k.b)):esc(k.b)}</p>`).join("")}<a class="fmore" href="#today">오늘 브리핑 전체(요약 포함) →</a></div>
+   <div class="fkey"><b>핵심 뉴스</b>${picks.map((n,i)=>`<p><b class="n">${i+1}</b> ${link(n,"fk",esc(n.t))} <span class="fkc">${esc(catName[n.c]||"")}</span></p>`).join("")}<a class="fmore" href="#today">오늘 브리핑 전체(요약 포함) →</a></div>
   </article>
   <div class="fcols">${cols}</div>
  </div>
