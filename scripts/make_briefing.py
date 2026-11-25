@@ -1,19 +1,29 @@
 #!/usr/bin/env python3
 """건설·건축 데일리 브리핑 생성 스크립트.
 
-매일 GitHub Actions에서 실행되어
-  1) OpenAI API(기본 모델: gpt-6-luna)에 웹 검색을 시켜 최근 뉴스를 모으고
+매일 자동으로 실행되어
+  1) 회사 Open WebUI(또는 OpenAI API)에 웹 검색을 시켜 최근 뉴스를 모으고
   2) 정해진 JSON 형식으로 브리핑을 받아 검증한 뒤
   3) data/YYYY-MM-DD.json 을 쓰고 data/index.json 맨 앞에 그날 항목을 추가합니다.
 
 외부 패키지 없이 파이썬 표준 라이브러리만 씁니다.
 
 환경 변수
+  BRIEFING_BACKEND    openwebui(기본) 또는 openai
+
+  [openwebui]
+  OPENWEBUI_URL       (필수) 예: https://ai.aaarchigroup-ai.com
+  OPENWEBUI_API_KEY   (필수) Open WebUI 설정 > 계정 > API 키
+  OPENWEBUI_MODEL     (필수) Open WebUI의 모델 ID (예: gpt-6-luna)
+
+  [openai]
   OPENAI_API_KEY      (필수) OpenAI API 키
   OPENAI_MODEL        (선택) 기본값 gpt-6-luna
-  OPENAI_EFFORT       (선택) 추론 강도 low / medium / high. 기본값 medium
+  OPENAI_EFFORT       (선택) low / medium / high. 기본값 medium
+
+  공통
   BRIEFING_DATE       (선택) YYYY-MM-DD. 비우면 오늘(한국시간)
-  BRIEFING_MOCK_FILE  (테스트용) API 대신 이 파일 내용을 응답으로 사용
+  BRIEFING_MOCK_FILE  (테스트용) 모델 대신 이 파일 내용을 응답으로 사용
 """
 from __future__ import annotations
 
@@ -25,6 +35,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import uuid
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -33,7 +44,6 @@ DATA = ROOT / "data"
 KST = ZoneInfo("Asia/Seoul")
 WEEKDAYS = "월화수목금토일"
 CATS = {"design", "build", "public", "market", "biz"}
-API_URL = "https://api.openai.com/v1/responses"
 
 COMPANY = "AA아키그룹(에이에이아키그룹건축사사무소, 영문 AA Archigroup)"
 COMPANY_NEWSROOM = "https://www.aaarchigroup.com/news"
@@ -47,7 +57,7 @@ SYSTEM = f"""당신은 한국 건축설계 회사 {COMPANY}의 사내 뉴스 브
 - 모든 기사에 실제 원문 URL을 붙입니다. URL은 검색 결과에서 확인한 것만 씁니다.
 - 최근 7일 이내 기사만 씁니다. 기사 날짜를 반드시 확인합니다.
 - 블로그·업체 홍보글처럼 출처가 약하면 출처명에 그렇게 표시합니다. 예: "산군 블로그(입찰정보 업체)"
-- 출력은 JSON 하나만 씁니다. 설명, 마크다운, 코드블록 표시는 쓰지 않습니다."""
+- 최종 출력은 JSON 하나만 씁니다. 설명, 마크다운, 코드블록 표시는 쓰지 않습니다."""
 
 SCHEMA_HINT = """출력 JSON 형식 (키 이름과 구조를 정확히 지킬 것)
 {
@@ -74,6 +84,7 @@ SCHEMA_HINT = """출력 JSON 형식 (키 이름과 구조를 정확히 지킬 �
 - biz: PF, 건설사 실적·인사, 정책·규제"""
 
 
+# ---------------------------------------------------------------- 공통 유틸
 def today_kst() -> dt.date:
     raw = os.environ.get("BRIEFING_DATE", "").strip()
     if raw:
@@ -88,6 +99,37 @@ def load_json(path: Path, default):
         return default
 
 
+def need(name: str) -> str:
+    v = os.environ.get(name, "").strip()
+    if not v:
+        sys.exit(f"{name} 가 설정되지 않았습니다. GitHub 저장소 Settings > Secrets and variables > Actions 에 등록하세요.")
+    return v
+
+
+def http(method: str, url: str, key: str, body: dict | None = None, timeout: int = 120):
+    """JSON 요청 한 번. 일시 오류는 최대 3번 재시도합니다."""
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    for attempt in range(3):
+        req = urllib.request.Request(url, data=data, method=method, headers={
+            "Authorization": f"Bearer {key}", "Content-Type": "application/json", "Accept": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                raw = r.read().decode("utf-8")
+                return json.loads(raw) if raw.strip() else None
+        except urllib.error.HTTPError as e:
+            msg = e.read().decode("utf-8", "replace")
+            if e.code in (429, 500, 502, 503, 504) and attempt < 2:
+                time.sleep(20 * (attempt + 1))
+                continue
+            raise RuntimeError(f"HTTP {e.code} {url}\n{msg[:800]}") from None
+        except urllib.error.URLError as e:
+            if attempt < 2:
+                time.sleep(20)
+                continue
+            raise RuntimeError(f"서버에 연결하지 못했습니다: {url} ({e.reason})") from None
+
+
+# ---------------------------------------------------------------- 프롬프트
 def build_prompt(day: dt.date, index: list) -> str:
     prev_titles: list[str] = []
     prev_aa: list = []
@@ -120,15 +162,72 @@ def build_prompt(day: dt.date, index: list) -> str:
 {SCHEMA_HINT}"""
 
 
-def call_openai(prompt: str) -> str:
-    mock = os.environ.get("BRIEFING_MOCK_FILE")
-    if mock:
-        return Path(mock).read_text(encoding="utf-8")
+# ---------------------------------------------------------------- 모델 호출: Open WebUI
+def call_openwebui(prompt: str, day: dt.date) -> str:
+    """회사 Open WebUI에서 웹 검색을 켜고 답을 받아옵니다.
 
-    key = os.environ.get("OPENAI_API_KEY")
-    if not key:
-        sys.exit("OPENAI_API_KEY 가 설정되지 않았습니다. GitHub 저장소 Settings > Secrets 에 등록하세요.")
+    Open WebUI는 웹 검색 같은 내장 도구를 '저장된 채팅 + 스트리밍 + session_id' 요청에서만
+    실행합니다. 그래서 (1) 채팅을 만들고 (2) 백그라운드로 답을 생성시킨 뒤
+    (3) 끝날 때까지 기다렸다가 (4) 채팅에서 답을 읽어 옵니다.
+    만들어진 채팅은 Open WebUI 채팅 목록에 '데일리 브리핑 날짜'로 남습니다.
+    """
+    base = need("OPENWEBUI_URL").rstrip("/")
+    key = need("OPENWEBUI_API_KEY")
+    model = need("OPENWEBUI_MODEL")
 
+    uid, aid = str(uuid.uuid4()), str(uuid.uuid4())
+    ts = int(time.time())
+    user_msg = {"id": uid, "parentId": None, "childrenIds": [aid], "role": "user",
+                "content": prompt, "timestamp": ts, "models": [model]}
+    asst_msg = {"id": aid, "parentId": uid, "childrenIds": [], "role": "assistant",
+                "content": "", "model": model, "modelName": model, "timestamp": ts, "done": False}
+    chat = {"title": f"데일리 브리핑 {day.isoformat()}", "models": [model],
+            "history": {"currentId": aid, "messages": {uid: user_msg, aid: asst_msg}},
+            "messages": [user_msg, asst_msg], "tags": [], "timestamp": ts * 1000}
+
+    created = http("POST", f"{base}/api/v1/chats/new", key, {"chat": chat})
+    chat_id = (created or {}).get("id")
+    if not chat_id:
+        raise RuntimeError(f"Open WebUI 채팅을 만들지 못했습니다: {str(created)[:300]}")
+
+    body = {
+        "model": model,
+        "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
+        "stream": True,
+        "chat_id": chat_id,
+        "id": aid,
+        "user_message": user_msg,
+        "session_id": f"api-{uuid.uuid4()}",
+        "features": {"web_search": True},
+        "background_tasks": {"title_generation": False, "tags_generation": False, "follow_up_generation": False},
+    }
+    started = http("POST", f"{base}/api/chat/completions", key, body, timeout=180)
+    print("Open WebUI 작업 시작:", json.dumps(started, ensure_ascii=False)[:200])
+
+    deadline = time.time() + 20 * 60
+    time.sleep(15)
+    while time.time() < deadline:
+        tasks = http("GET", f"{base}/api/tasks/chat/{chat_id}", key) or {}
+        if not tasks.get("task_ids"):
+            break
+        time.sleep(15)
+    else:
+        raise RuntimeError("Open WebUI 답변이 20분 안에 끝나지 않았습니다.")
+
+    full = http("GET", f"{base}/api/v1/chats/{chat_id}", key) or {}
+    msg = (((full.get("chat") or {}).get("history") or {}).get("messages") or {}).get(aid) or {}
+    if msg.get("usage"):
+        print("토큰 사용량:", json.dumps(msg["usage"], ensure_ascii=False))
+    content = msg.get("content") or ""
+    if not content.strip():
+        err = msg.get("error") or msg.get("statusHistory") or "빈 답변"
+        raise RuntimeError(f"Open WebUI 답변이 비어 있습니다: {str(err)[:500]}")
+    return content
+
+
+# ---------------------------------------------------------------- 모델 호출: OpenAI API
+def call_openai(prompt: str, day: dt.date) -> str:
+    key = need("OPENAI_API_KEY")
     body = {
         "model": os.environ.get("OPENAI_MODEL", "gpt-6-luna"),
         "instructions": SYSTEM,
@@ -136,54 +235,35 @@ def call_openai(prompt: str) -> str:
         "tools": [{"type": "web_search"}],
         "reasoning": {"effort": os.environ.get("OPENAI_EFFORT", "medium")},
     }
-
-    def post(payload: dict) -> dict:
-        req = urllib.request.Request(
-            API_URL,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=900) as r:
-            return json.loads(r.read().decode("utf-8"))
-
-    for attempt in range(3):
-        try:
-            data = post(body)
-            break
-        except urllib.error.HTTPError as e:
-            msg = e.read().decode("utf-8", "replace")
-            if e.code == 400 and "reasoning" in msg and "reasoning" in body:
-                body.pop("reasoning")  # 추론 강도 옵션을 지원하지 않는 모델이면 빼고 다시 시도
-                continue
-            if e.code in (429, 500, 502, 503, 504) and attempt < 2:
-                time.sleep(30 * (attempt + 1))
-                continue
-            sys.exit(f"OpenAI API 오류 {e.code}: {msg[:800]}")
-        except urllib.error.URLError as e:
-            if attempt < 2:
-                time.sleep(30)
-                continue
-            sys.exit(f"OpenAI API 연결 실패: {e}")
-    else:
-        sys.exit("OpenAI API 호출에 실패했습니다.")
-
-    texts = []
-    for item in data.get("output", []):
-        if item.get("type") == "message":
-            for c in item.get("content", []):
-                if c.get("type") == "output_text":
-                    texts.append(c.get("text", ""))
-    if not texts and isinstance(data.get("output_text"), str):
-        texts.append(data["output_text"])
-    usage = data.get("usage")
-    if usage:
-        print("토큰 사용량:", json.dumps(usage, ensure_ascii=False))
+    try:
+        data = http("POST", "https://api.openai.com/v1/responses", key, body, timeout=900)
+    except RuntimeError as e:
+        if "HTTP 400" in str(e) and "reasoning" in str(e):
+            body.pop("reasoning")
+            data = http("POST", "https://api.openai.com/v1/responses", key, body, timeout=900)
+        else:
+            raise
+    texts = [c.get("text", "") for item in (data or {}).get("output", []) if item.get("type") == "message"
+             for c in item.get("content", []) if c.get("type") == "output_text"]
+    if (data or {}).get("usage"):
+        print("토큰 사용량:", json.dumps(data["usage"], ensure_ascii=False))
     return "\n".join(texts)
 
 
+def ask_model(prompt: str, day: dt.date) -> str:
+    mock = os.environ.get("BRIEFING_MOCK_FILE")
+    if mock:
+        return Path(mock).read_text(encoding="utf-8")
+    backend = os.environ.get("BRIEFING_BACKEND", "openwebui").strip().lower()
+    if backend == "openai":
+        return call_openai(prompt, day)
+    return call_openwebui(prompt, day)
+
+
+# ---------------------------------------------------------------- 응답 정리·검증
 def extract_json(text: str) -> dict:
-    text = text.strip()
+    # Open WebUI는 검색·도구 실행 기록을 <details> 블록으로 답 앞에 붙일 수 있어 먼저 지웁니다.
+    text = re.sub(r"<details[\s\S]*?</details>", "", text).strip()
     text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
     try:
         return json.loads(text)
@@ -251,6 +331,7 @@ def validate(raw: dict, day: dt.date) -> dict:
     return out
 
 
+# ---------------------------------------------------------------- 실행
 def main() -> None:
     day = today_kst()
     index = load_json(DATA / "index.json", [])
@@ -260,16 +341,16 @@ def main() -> None:
     prompt = build_prompt(day, index)
     last_err = None
     for attempt in range(2):
-        text = call_openai(prompt)
         try:
+            text = ask_model(prompt, day)
             brief = validate(extract_json(text), day)
             break
-        except (ValueError, json.JSONDecodeError) as e:
+        except (ValueError, json.JSONDecodeError, RuntimeError) as e:
             last_err = e
-            print(f"응답 검증 실패({attempt + 1}회차): {e}")
+            print(f"{attempt + 1}회차 실패: {e}")
             prompt += "\n\n주의: 직전 응답이 형식에 맞지 않았습니다. 위 JSON 형식만, 다른 글자 없이 출력하세요."
     else:
-        sys.exit(f"브리핑 생성 실패: {last_err}. 오늘은 발행하지 않고 기존 사이트를 유지합니다.")
+        sys.exit(f"브리핑 생성 실패: {last_err}\n오늘은 발행하지 않고 기존 사이트를 유지합니다.")
 
     head = brief.pop("_head")
     DATA.mkdir(exist_ok=True)
