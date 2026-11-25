@@ -10,6 +10,9 @@ on:
       date:
         description: "날짜(YYYY-MM-DD). 비우면 오늘"
         required: false
+      only:
+        description: "project_seoul 을 넣으면 프로젝트 서울 목록만 갱신(AI 사용 안 함)"
+        required: false
 
 permissions:
   contents: write   # 이 저장소에만 새 브리핑 파일을 올릴 권한
@@ -38,6 +41,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-6-luna' }}
           BRIEFING_DATE: ${{ github.event.inputs.date }}
+          BRIEFING_ONLY: ${{ github.event.inputs.only }}
         run: python scripts/make_briefing.py
 
       - name: 사이트에 반영 (커밋·푸시)
