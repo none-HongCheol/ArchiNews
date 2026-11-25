@@ -44,7 +44,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 KST = ZoneInfo("Asia/Seoul")
 WEEKDAYS = "월화수목금토일"
-CATS = {"design", "build", "public", "market", "biz"}
+CATS = {"design", "seoul", "build", "public", "market", "biz"}
 
 COMPANY = "AA아키그룹(에이에이아키그룹건축사사무소, 영문 AA Archigroup)"
 COMPANY_NEWSROOM = "https://www.aaarchigroup.com/news"
@@ -71,7 +71,7 @@ SCHEMA_HINT = """출력 JSON 형식 (키 이름과 구조를 정확히 지킬 �
    "signal": "회사 사업(반도체·데이터센터 등 하이테크, 주거, 업무·복합)과 연결되는 오늘의 시장 신호 1~2문장"
  },
  "news": [
-   {"c": "design|build|public|market|biz 중 하나", "t": "제목", "p": "2~3문장 요약",
+   {"c": "design|seoul|build|public|market|biz 중 하나", "t": "제목", "p": "2~3문장 요약",
     "s": [["언론사", "MM.DD", "https://..."]]}
  ],   // 6~12건
  "head": "그날 핵심 한 줄 (40자 안팎)",
@@ -79,6 +79,7 @@ SCHEMA_HINT = """출력 JSON 형식 (키 이름과 구조를 정확히 지킬 �
 }
 분야(c) 뜻
 - design: 재건축·재개발 설계자 선정, 설계공모, 건축사사무소 동향
+- seoul: 서울시 공공건축 설계공모(프로젝트 서울 project.seoul.go.kr)의 공고·마감·심사·당선 발표
 - build: 정비사업 시공사 선정, 건설사 수주
 - public: LH·조달청·공공기관 발주, 입찰
 - market: 건설수주·기성·CBSI·공사비지수 등 경기 지표
@@ -131,6 +132,21 @@ def http(method: str, url: str, key: str, body: dict | None = None, timeout: int
 
 
 # ---------------------------------------------------------------- 프롬프트
+def prev_context(day: dt.date, index: list) -> tuple[str, str]:
+    """어제 실린 기사 제목 목록과 회사 최근 보도 목록을 돌려줍니다."""
+    prev_titles: list[str] = []
+    prev_aa: list = []
+    earlier = [e for e in index if isinstance(e, dict) and e.get("date", "") < day.isoformat()][:2]
+    for i, entry in enumerate(earlier):
+        prev = load_json(DATA / f"{entry.get('date')}.json", {})
+        prev_titles += [n.get("t", "") for n in prev.get("news", [])]
+        if i == 0:
+            prev_aa = (prev.get("aa") or {}).get("recent") or []
+    prev_block = "\n".join(f"- {t}" for t in prev_titles if t) or "(없음)"
+    recent_block = json.dumps(prev_aa, ensure_ascii=False) if prev_aa else "(없음)"
+    return prev_block, recent_block
+
+
 def build_prompt(day: dt.date, index: list) -> str:
     prev_titles: list[str] = []
     prev_aa: list = []
@@ -150,7 +166,8 @@ def build_prompt(day: dt.date, index: list) -> str:
 3. 공공 발주: LH 발주, 조달청 시설공사 주간 입찰 동향, 공공 설계공모
 4. 경기 지표: 한국건설산업연구원 건설시장동향·CBSI, 건설수주·기성, 공사비지수
 5. 업계·금융: 부동산 PF, 건설사 실적·인사, 건설 정책
-6. 우리 회사 {COMPANY}: "AA아키그룹", "에이에이아키그룹"으로 검색하고 회사 뉴스룸 {COMPANY_NEWSROOM} 도 확인. 반도체 공장·데이터센터 등 하이테크 설계 시장 소식도 확인.
+6. 서울시 공공건축 설계공모: 프로젝트 서울(https://project.seoul.go.kr)의 공모 공고·접수마감·심사·당선 발표
+7. 우리 회사 {COMPANY}: "AA아키그룹", "에이에이아키그룹"으로 검색하고 회사 뉴스룸 {COMPANY_NEWSROOM} 도 확인. 반도체 공장·데이터센터 등 하이테크 설계 시장 소식도 확인.
 
 우리 회사 관련 기사는 news에 넣지 말고 aa.today에만 넣으세요.
 
@@ -164,6 +181,9 @@ def build_prompt(day: dt.date, index: list) -> str:
 
 
 # ---------------------------------------------------------------- 모델 호출: Open WebUI
+_MODEL = ""
+
+
 def resolve_model(base: str, key: str, wanted: str) -> str:
     """모델 ID 또는 화면에 보이는 모델 이름을 받아 실제 모델 ID를 찾습니다."""
     try:
@@ -188,7 +208,7 @@ def resolve_model(base: str, key: str, wanted: str) -> str:
     raise RuntimeError(f"모델 '{wanted}'을(를) 찾지 못했습니다. 사용할 수 있는 모델: {names}")
 
 
-def call_openwebui(prompt: str, day: dt.date) -> str:
+def call_openwebui(prompt: str, day: dt.date, web: bool = True, label: str = "") -> str:
     """회사 Open WebUI에서 웹 검색을 켜고 답을 받아옵니다.
 
     Open WebUI는 웹 검색 같은 내장 도구를 '저장된 채팅 + 스트리밍 + session_id' 요청에서만
@@ -198,7 +218,10 @@ def call_openwebui(prompt: str, day: dt.date) -> str:
     """
     base = need("OPENWEBUI_URL").rstrip("/")
     key = need("OPENWEBUI_API_KEY")
-    model = resolve_model(base, key, need("OPENWEBUI_MODEL"))
+    global _MODEL
+    if not _MODEL:
+        _MODEL = resolve_model(base, key, need("OPENWEBUI_MODEL"))
+    model = _MODEL
 
     uid, aid = str(uuid.uuid4()), str(uuid.uuid4())
     ts = int(time.time())
@@ -206,7 +229,7 @@ def call_openwebui(prompt: str, day: dt.date) -> str:
                 "content": prompt, "timestamp": ts, "models": [model]}
     asst_msg = {"id": aid, "parentId": uid, "childrenIds": [], "role": "assistant",
                 "content": "", "model": model, "modelName": model, "timestamp": ts, "done": False}
-    chat = {"title": f"데일리 브리핑 {day.isoformat()}", "models": [model],
+    chat = {"title": f"데일리 브리핑 {day.isoformat()} {label}".strip(), "models": [model],
             "history": {"currentId": aid, "messages": {uid: user_msg, aid: asst_msg}},
             "messages": [user_msg, asst_msg], "tags": [], "timestamp": ts * 1000}
 
@@ -223,11 +246,11 @@ def call_openwebui(prompt: str, day: dt.date) -> str:
         "id": aid,
         "user_message": user_msg,
         "session_id": f"api-{uuid.uuid4()}",
-        "features": {"web_search": True},
+        "features": {"web_search": web},
         "background_tasks": {"title_generation": False, "tags_generation": False, "follow_up_generation": False},
     }
     started = http("POST", f"{base}/api/chat/completions", key, body, timeout=180)
-    print("Open WebUI 작업 시작:", json.dumps(started, ensure_ascii=False)[:200])
+    print(f"[{label or '요청'}] Open WebUI 작업 시작:", json.dumps(started, ensure_ascii=False)[:120])
 
     deadline = time.time() + 20 * 60
     time.sleep(15)
@@ -244,6 +267,11 @@ def call_openwebui(prompt: str, day: dt.date) -> str:
     if msg.get("usage"):
         print("토큰 사용량:", json.dumps(msg["usage"], ensure_ascii=False))
     content = msg.get("content") or ""
+    if not os.environ.get("OPENWEBUI_KEEP_CHATS"):
+        try:  # 매일 생기는 작업용 채팅은 지워서 채팅 목록을 깔끔하게 유지합니다.
+            http("DELETE", f"{base}/api/v1/chats/{chat_id}", key)
+        except RuntimeError as e:
+            print(f"작업용 채팅을 지우지 못했습니다(무시): {e}")
     if not content.strip():
         err = msg.get("error") or msg.get("statusHistory") or "빈 답변"
         raise RuntimeError(f"Open WebUI 답변이 비어 있습니다: {str(err)[:500]}")
@@ -273,6 +301,92 @@ def call_openai(prompt: str, day: dt.date) -> str:
     if (data or {}).get("usage"):
         print("토큰 사용량:", json.dumps(data["usage"], ensure_ascii=False))
     return "\n".join(texts)
+
+
+GROUPS = [
+    ("design", "설계·정비사업: 재건축·재개발 설계자(설계사) 선정, 민간·공공 설계공모 결과, 주요 건축사사무소(희림·해안·삼우·건원·에이앤유·나우동인·DA그룹·정림 등) 동향"),
+    ("seoul", "서울시 공공건축 설계공모: 프로젝트 서울(https://project.seoul.go.kr)에 올라온 설계공모 공고·접수마감·심사·당선작 발표와 이를 다룬 보도. 공모 상세 페이지 주소가 있으면 그 주소를 링크로 쓰세요"),
+    ("build", "시공 수주: 재건축·재개발 시공사 선정 총회와 결과, 건설사 수주 소식"),
+    ("public", "공공 발주: LH·조달청 시설공사 발주와 입찰(조달청 시설공사 주간 입찰 동향 포함), 공공기관 설계공모"),
+    ("market", "경기 지표: 한국건설산업연구원 건설시장동향·건설경기실사지수(CBSI), 통계청 건설수주·기성, 건설공사비지수"),
+    ("biz", "업계·금융: 부동산 PF, 건설사 실적·인사, 건설·부동산 정책과 규제"),
+]
+
+GROUP_FORMAT = """출력은 JSON 하나만 (다른 글자 없이):
+{"news": [{"t": "제목(직접 새로 씀)", "p": "2~3문장 요약(직접 새로 씀)", "s": [["언론사", "MM.DD", "https://실제 기사 주소"]]}],
+ "cal": [["날짜", "다가오는 총회·입찰마감·발표 일정"]]}
+기사는 2~4건. 찾지 못하면 {"news": [], "cal": []}"""
+
+
+def gather_openwebui(day: dt.date, index: list) -> dict:
+    """분야마다 따로 요청해 검색 한도를 나눠 쓰고, 마지막에 핵심 3줄만 따로 정리합니다."""
+    prev_block, recent_block = prev_context(day, index)
+    head = f"오늘은 {day.isoformat()} ({WEEKDAYS[day.weekday()]}) 입니다. 한국시간 기준입니다.\n"
+    news, cal, seen = [], [], set()
+    for cat, desc in GROUPS:
+        prompt = (head + f"아래 주제만 웹 검색해서 최근 24~48시간(부족하면 7일 이내) 기사를 찾으세요.\n주제: {desc}\n"
+                  f"우리 회사({COMPANY}) 관련 기사는 넣지 마세요.\n"
+                  f"어제 브리핑에 이미 실린 기사(새 진전이 없으면 제외):\n{prev_block}\n\n{GROUP_FORMAT}")
+        try:
+            raw = extract_json(call_openwebui(prompt, day, True, cat))
+        except (RuntimeError, ValueError, json.JSONDecodeError) as e:
+            print(f"[{cat}] 건너뜀: {e}")
+            continue
+        got = 0
+        for n in raw.get("news") or raw.get("articles") or []:
+            if not isinstance(n, dict):
+                continue
+            srcs = parse_sources(n)
+            if not srcs or srcs[0][2] in seen:
+                continue
+            seen.add(srcs[0][2])
+            n = dict(n)
+            n["c"] = cat
+            n["s"] = srcs
+            news.append(n)
+            got += 1
+        cal += [c for c in (raw.get("cal") or []) if isinstance(c, (list, tuple)) and len(c) >= 2]
+        print(f"[{cat}] 기사 {got}건")
+
+    aa = {"today": [], "recent": [], "signal": ""}
+    aa_prompt = (head + f"우리 회사 {COMPANY} 관련 최근 7일 보도를 웹 검색하세요. "
+                 f'"AA아키그룹", "에이에이아키그룹"으로 검색하고 회사 뉴스룸 {COMPANY_NEWSROOM} 도 확인하세요. '
+                 "반도체 공장·데이터센터 등 하이테크 설계 시장 소식도 확인하세요.\n"
+                 f"어제 기준 회사 최근 보도 목록(새 보도가 있으면 맨 앞에 추가해 최대 4건 유지):\n{recent_block}\n\n"
+                 'JSON 하나만 출력: {"today": [{"d": "YYYY.MM.DD", "t": "제목", "p": "한 줄 요약", "u": "https://..."}], '
+                 '"recent": [{"d": "YYYY.MM.DD", "t": "제목", "u": "https://..."}], '
+                 '"signal": "회사 사업(반도체·데이터센터 등 하이테크, 주거, 업무·복합)과 연결되는 오늘의 시장 신호 1~2문장"}. '
+                 "새 보도가 없으면 today는 []")
+    try:
+        raw = extract_json(call_openwebui(aa_prompt, day, True, "aa"))
+        aa = {k: raw.get(k, aa[k]) for k in aa}
+        print(f"[aa] 새 소식 {len(raw.get('today') or [])}건")
+    except (RuntimeError, ValueError, json.JSONDecodeError) as e:
+        print(f"[aa] 건너뜀: {e}")
+        try:
+            aa["recent"] = json.loads(recent_block) if recent_block != "(없음)" else []
+        except json.JSONDecodeError:
+            pass
+
+    if not news:
+        raise ValueError("모든 분야에서 기사를 찾지 못했습니다.")
+
+    listing = "\n".join(f"- [{n['c']}] {s(n.get('t') or n.get('title'), 120)} / {s(n.get('p') or n.get('summary'), 300)} ({n['s'][0][0]})"
+                         for n in news)
+    summary_prompt = (head + "아래는 오늘 브리핑에 실을 기사 목록입니다. 이 목록에 있는 사실만 써서 핵심 정리를 하세요. "
+                      "새로 검색하거나 목록에 없는 숫자를 만들지 마세요. 검색이 부족했다는 등 작업 과정 이야기는 쓰지 마세요.\n\n"
+                      f"{listing}\n\n"
+                      'JSON 하나만 출력: {"key": [{"b": "굵게 보일 한 줄 요지(마침표로 끝)", "t": "보충 한 문장"}] (정확히 3개), '
+                      '"figure": {"label": "숫자 설명", "value": "24.6", "unit": "조원", "change": "변화", "note": "짧은 맥락"} (목록에 의미 있는 숫자가 없으면 생략), '
+                      '"gauge": {"label": "지수 이름 (기준선 100)", "value": 74.9, "note": "해석"} (기준선 100 지수가 목록에 있을 때만), '
+                      '"head": "그날 핵심 한 줄 (40자 안팎)"}')
+    try:
+        top = extract_json(call_openwebui(summary_prompt, day, False, "핵심 정리"))
+    except (RuntimeError, ValueError, json.JSONDecodeError) as e:
+        print(f"[핵심 정리] 실패, 기사 제목으로 대신합니다: {e}")
+        top = {}
+    return {"key": top.get("key") or [], "figure": top.get("figure"), "gauge": top.get("gauge"),
+            "head": top.get("head") or "", "aa": aa, "news": news, "cal": cal}
 
 
 def ask_model(prompt: str, day: dt.date) -> str:
@@ -339,7 +453,8 @@ def norm_cat(c) -> str:
     c = s(c).lower()
     if c in CATS:
         return c
-    rules = [("design", ("design", "설계", "정비", "재건축", "재개발", "건축사")),
+    rules = [("seoul", ("seoul", "서울시 설계공모", "프로젝트 서울", "project.seoul", "서울시 공공건축")),
+             ("design", ("design", "설계", "정비", "재건축", "재개발", "건축사")),
              ("market", ("market", "경기", "지표", "통계", "cbsi", "기성")),
              ("public", ("public", "공공", "발주", "입찰", "lh", "조달")),
              ("build", ("build", "시공", "수주", "건설사"))]
@@ -443,6 +558,15 @@ def main() -> None:
     if not isinstance(index, list):
         index = []
 
+    backend = os.environ.get("BRIEFING_BACKEND", "openwebui").strip().lower()
+    if backend == "openwebui" and not os.environ.get("BRIEFING_MOCK_FILE"):
+        try:
+            brief = validate(gather_openwebui(day, index), day)
+        except (ValueError, RuntimeError) as e:
+            sys.exit(f"브리핑 생성 실패: {e}\n오늘은 발행하지 않고 기존 사이트를 유지합니다.")
+        publish(day, index, brief)
+        return
+
     prompt = build_prompt(day, index)
     last_err = None
     for attempt in range(2):
@@ -462,6 +586,10 @@ def main() -> None:
     else:
         sys.exit(f"브리핑 생성 실패: {last_err}\n오늘은 발행하지 않고 기존 사이트를 유지합니다.")
 
+    publish(day, index, brief)
+
+
+def publish(day: dt.date, index: list, brief: dict) -> None:
     head = brief.pop("_head")
     DATA.mkdir(exist_ok=True)
     (DATA / f"{day.isoformat()}.json").write_text(json.dumps(brief, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
