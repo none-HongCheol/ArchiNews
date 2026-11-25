@@ -103,6 +103,21 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .aav .list b{display:block;font:700 17px/1.4 "Noto Serif KR",serif}
 .aav .links{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .quick{display:flex;flex-wrap:wrap;gap:8px;padding:18px 0;border-bottom:1px solid var(--hair)}
+/* 프로젝트 서울 탭 */
+.psv{padding:24px 0 30px;border-bottom:3px solid var(--rule)}
+.psv h3{font:700 19px/1.3 "Noto Serif KR",serif;margin:26px 0 8px}
+.psv .links{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.nl{list-style:none;margin:0;padding:0}
+.nl a{display:grid;grid-template-columns:6.5em minmax(0,1fr);gap:12px;padding:11px 0;border-top:1px solid var(--hair);text-decoration:none;color:var(--ink)}
+.nl a:hover b{text-decoration:underline}
+.nl time{color:var(--mute);white-space:nowrap}
+.nl small{display:block;color:var(--slate);font-size:13px}
+.arcg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.arcg a{display:flex;flex-direction:column;gap:4px;padding:14px;border:1px solid var(--hair);text-decoration:none;color:var(--ink)}
+.arcg a:hover{border-color:var(--ink)}
+.arcg .st{font-size:12px;font-weight:700;color:var(--red)}
+.arcg b{font:700 16px/1.35 "Noto Serif KR",serif}
+.arcg span{font-size:13px;color:var(--mute)}
 /* 지난 브리핑 */
 .arc{padding:24px 0 30px;border-bottom:3px solid var(--rule)}
 .arc .tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
@@ -126,7 +141,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .reader .note{margin:0;padding:8px 14px;font-size:13px;color:var(--mute);background:var(--panel)}
 .reader iframe{flex:1;width:100%;border:0;background:#fff}
 .foot{padding:18px 0 40px;font-size:13px;color:var(--mute)}
-@media(max-width:860px){.top,.grid{grid-template-columns:minmax(0,1fr)}.aa{grid-template-columns:minmax(0,1fr)}.cats{grid-template-columns:repeat(2,minmax(0,1fr))}.aav .list li{grid-template-columns:minmax(0,1fr);gap:2px}}
+@media(max-width:860px){.top,.grid{grid-template-columns:minmax(0,1fr)}.aa{grid-template-columns:minmax(0,1fr)}.cats{grid-template-columns:repeat(2,minmax(0,1fr))}.aav .list li{grid-template-columns:minmax(0,1fr);gap:2px}.arcg{grid-template-columns:minmax(0,1fr)}.nl a{grid-template-columns:minmax(0,1fr);gap:2px}}
 @media(max-width:600px){.filters{position:static}.cal td:first-child{width:5.5em}.day{grid-template-columns:minmax(0,1fr);gap:2px}.nav{margin-left:0}.reader .box{width:100vw}}
 @media(prefers-reduced-motion:no-preference){.reader.open .box{animation:slide .2s ease-out}@keyframes slide{from{transform:translateX(40px);opacity:.6}to{transform:none;opacity:1}}}
 </style>
@@ -140,6 +155,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 <a href="#home" id="vHome">홈</a>
 <a href="#today" id="vToday">오늘 브리핑</a>
 <a href="#aa" id="vAA">AA 소식</a>
+<a href="#ps" id="vPS">프로젝트 서울</a>
 <a href="#archive" id="vArc">지난 브리핑</a>
 </nav>
 </div>
@@ -216,7 +232,7 @@ async function homeView(){
  main.innerHTML=`<section class="top"><div><h2>오늘의 핵심</h2>${keyHTML(D)}<a class="more" href="#today">오늘 브리핑 전체 보기 →</a></div>${numsHTML(D)}</section>
  ${aaHTML(D)}
  <section><h2 style="margin-top:26px">분야별 바로가기</h2><div class="cats" style="padding-top:6px">${cats}</div></section>
- <nav class="quick" aria-label="바로가기"><a class="btn" href="https://project.seoul.go.kr" target="_blank" rel="noopener">프로젝트 서울 (서울시 설계공모) ↗</a><a class="btn" href="https://www.aaarchigroup.com/news" target="_blank" rel="noopener">AA아키그룹 뉴스룸 ↗</a></nav>
+ <nav class="quick" aria-label="바로가기"><a class="btn" href="#ps">프로젝트 서울 공고·아카이브 보기</a><a class="btn" href="https://www.aaarchigroup.com/news" target="_blank" rel="noopener">AA아키그룹 뉴스룸 ↗</a></nav>
  <section class="recent"><h2>최근 브리핑</h2>${IDX.slice(0,7).map(dayRow).join("")}${IDX.length>7?`<a class="more" href="#archive">지난 브리핑 모두 보기 →</a>`:""}</section>`;
  main.querySelectorAll(".cat").forEach(b=>b.addEventListener("click",()=>{cur=b.dataset.k;try{localStorage.setItem("brief-cat",cur)}catch(err){}location.hash="today"}));
 }
@@ -244,6 +260,24 @@ async function aaView(){
  ${sig?`<p class="sig" style="padding:10px 12px;background:var(--panel)"><b>최근 시장 신호</b> · ${esc(sig)}</p>`:""}
  ${items.length?`<ul class="list">${items.map(x=>`<li><time>${esc(x.d)}</time><div><b>${orig(x.u,"AA아키그룹 관련 보도",x.t,esc(x.t))}</b>${x.p?`<span class="lbl">${esc(x.p)}</span>`:""}</div></li>`).join("")}</ul>`:`<p class="msg">아직 모인 보도가 없습니다.</p>`}
  <div class="links"><a class="btn" href="https://www.aaarchigroup.com/news" target="_blank" rel="noopener">회사 뉴스룸 바로가기 ↗</a></div></section>`;
+}
+
+/* ---------- 프로젝트 서울 ---------- */
+const PS="https://project.seoul.go.kr";
+async function psView(){
+ dnav.style.display="none";dl.textContent="서울시 공공건축 설계공모 (프로젝트 서울)";
+ main.innerHTML=`<p class="msg">불러오는 중입니다.</p>`;
+ let P={};try{const r=await fetch("data/project_seoul.json",{cache:"no-store"});if(r.ok)P=await r.json()}catch(e){}
+ const ext=(u,label)=>`<a class="btn" href="${url(u)}" target="_blank" rel="noopener">${label} ↗</a>`;
+ const N=P.notices||[],A=P.archive||[];
+ main.innerHTML=`<section class="psv"><h2>프로젝트 서울</h2>
+ <p class="lbl">서울시 설계공모 통합 누리집의 공모알림과 설계·건설 아카이브를 매일 아침 모아 와요.${P.updated?` 마지막 갱신 ${esc(P.updated)}.`:""} 프로젝트 서울은 다른 사이트 안에서 열리지 않게 설정돼 있어서, 항목을 누르면 새 탭으로 열려요.</p>
+ <div class="links">${ext(PS+"/view/viewListCptt.do?stage=open","진행 중 공고")}${ext(PS+"/view/viewListCptt.do?stage=review","심사")}${ext(PS+"/view/viewListCptt.do?stage=results","결과")}${ext(PS+"/view/viewListArchive.do","설계·건설 아카이브")}${ext(PS+"/view/viewListArchive.do?tab=award","서울시건축상")}</div>
+ <h3>공모알림</h3>
+ ${N.length?`<ul class="nl">${N.map(x=>`<li><a href="${url(x.u)}" target="_blank" rel="noopener"><time>${esc(x.d)}</time><span><small>${esc(x.c)}</small><b>${esc(x.t)}</b></span></a></li>`).join("")}</ul>`:`<p class="msg">아직 가져온 공모알림이 없습니다.</p>`}
+ <h3>설계·건설 아카이브</h3>
+ ${A.length?`<div class="arcg">${A.map(x=>`<a href="${url(x.u)}" target="_blank" rel="noopener"><span class="st">${esc(x.stage)}</span><b>${esc(x.t)}</b><span>${esc(x.meta)}</span><span>${esc(x.info)}</span></a>`).join("")}</div>`:`<p class="msg">아직 가져온 아카이브가 없습니다.</p>`}
+ </section>`;
 }
 
 /* ---------- 지난 브리핑 ---------- */
@@ -282,11 +316,12 @@ document.addEventListener("click",e=>{
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&reader.classList.contains("open"))closeReader()});
 
 /* ---------- 라우팅 ---------- */
-function setTab(id){["vHome","vToday","vAA","vArc"].forEach(t=>{const el=document.getElementById(t);if(t===id)el.setAttribute("aria-current","page");else el.removeAttribute("aria-current")})}
+function setTab(id){["vHome","vToday","vAA","vPS","vArc"].forEach(t=>{const el=document.getElementById(t);if(t===id)el.setAttribute("aria-current","page");else el.removeAttribute("aria-current")})}
 async function route(){
  const h=location.hash.slice(1);
  if(h==="archive"){setTab("vArc");arcView();return}
  if(h==="aa"){setTab("vAA");await aaView();return}
+ if(h==="ps"){setTab("vPS");await psView();return}
  if(h===""||h==="home"){setTab("vHome");await homeView();return}
  setTab("vToday");
  const want=h.startsWith("d-")?h.slice(2):null;
