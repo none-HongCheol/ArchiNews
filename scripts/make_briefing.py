@@ -323,14 +323,22 @@ def naver_news(query: str, day: dt.date, display: int = 50, days: int = 3) -> li
     if not (cid and sec):
         return []
     from email.utils import parsedate_to_datetime
-    url = "https://openapi.naver.com/v1/search/news.json?" + urllib.parse.urlencode(
-        {"query": query, "display": display, "start": 1, "sort": "sim"})
-    req = urllib.request.Request(url, headers={"X-Naver-Client-Id": cid, "X-Naver-Client-Secret": sec})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            items = json.loads(r.read().decode("utf-8")).get("items") or []
-    except Exception as e:  # 네이버가 안 되면 조용히 건너뜁니다.
-        print(f"[네이버] '{query}' 검색 실패: {e}")
+    qs = urllib.parse.urlencode({"query": query, "display": display, "start": 1, "sort": "sim"})
+    # NAVER API HUB(네이버 클라우드) 키가 기본, 예전 개발자센터 키면 두 번째 주소로 시도합니다.
+    tries = [("https://naverapihub.apigw.ntruss.com/search/v1/news?" + qs,
+              {"X-NCP-APIGW-API-KEY-ID": cid, "X-NCP-APIGW-API-KEY": sec}),
+             ("https://openapi.naver.com/v1/search/news.json?" + qs,
+              {"X-Naver-Client-Id": cid, "X-Naver-Client-Secret": sec})]
+    items, errs = None, []
+    for url, hdr in tries:
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=hdr), timeout=30) as r:
+                items = json.loads(r.read().decode("utf-8")).get("items") or []
+            break
+        except Exception as e:  # 네이버가 안 되면 조용히 건너뜁니다.
+            errs.append(f"{url.split('/')[2]}: {e}")
+    if items is None:
+        print(f"[네이버] '{query}' 검색 실패: {' / '.join(errs)}")
         return []
     end = dt.datetime.combine(day, dt.time(23, 59), KST)
     out = []
