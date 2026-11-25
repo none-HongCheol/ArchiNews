@@ -303,6 +303,93 @@ def call_openai(prompt: str, day: dt.date) -> str:
     return "\n".join(texts)
 
 
+# ---------------------------------------------------------------- 네이버 뉴스 검색
+# NAVER_CLIENT_ID / NAVER_CLIENT_SECRET 이 있으면 켜집니다. 없으면 회사 웹UI 검색만 씁니다.
+NAVER_COMMON = ["건축", "건설"]          # 모든 분야에 공통으로 붙는 키워드 (관련도순)
+NAVER_QUERIES = {
+    "design": ["재건축 설계자 선정", "설계공모 당선", "건축사사무소"],
+    "seoul": ["서울시 설계공모", "프로젝트 서울 설계공모"],
+    "build": ["시공사 선정 총회", "건설 수주"],
+    "public": ["조달청 시설공사 발주", "LH 발주 입찰"],
+    "market": ["건설경기 실사지수", "건설수주 통계", "건설공사비지수"],
+    "biz": ["건설사 PF", "건설사 실적", "건설 정책 규제"],
+    "aa": ["AA아키그룹", "에이에이아키그룹"],
+}
+
+
+def naver_news(query: str, day: dt.date, display: int = 50, days: int = 3) -> list:
+    """네이버 뉴스 검색 API(관련도순). 최근 days일 기사만 남깁니다."""
+    cid, sec = os.environ.get("NAVER_CLIENT_ID", "").strip(), os.environ.get("NAVER_CLIENT_SECRET", "").strip()
+    if not (cid and sec):
+        return []
+    from email.utils import parsedate_to_datetime
+    url = "https://openapi.naver.com/v1/search/news.json?" + urllib.parse.urlencode(
+        {"query": query, "display": display, "start": 1, "sort": "sim"})
+    req = urllib.request.Request(url, headers={"X-Naver-Client-Id": cid, "X-Naver-Client-Secret": sec})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            items = json.loads(r.read().decode("utf-8")).get("items") or []
+    except Exception as e:  # 네이버가 안 되면 조용히 건너뜁니다.
+        print(f"[네이버] '{query}' 검색 실패: {e}")
+        return []
+    end = dt.datetime.combine(day, dt.time(23, 59), KST)
+    out = []
+    for it in items:
+        try:
+            when = parsedate_to_datetime(it.get("pubDate", "")).astimezone(KST)
+        except (TypeError, ValueError):
+            continue
+        if not (end - dt.timedelta(days=days) <= when <= end):
+            continue
+        link = it.get("originallink") or it.get("link") or ""
+        if not is_url(link):
+            continue
+        clean = lambda x: _strip(re.sub(r"</?b>", "", x or ""))
+        out.append({"t": clean(it.get("title")), "d": clean(it.get("description")),
+                    "u": link, "m": domain(link), "w": when.strftime("%m.%d")})
+    return out
+
+
+def naver_pool(day: dt.date) -> dict:
+    """분야별 네이버 검색 결과. 공통 키워드(건축·건설) 결과는 모든 분야에 함께 줍니다."""
+    if not (os.environ.get("NAVER_CLIENT_ID") and os.environ.get("NAVER_CLIENT_SECRET")):
+        print("[네이버] 키가 없어 건너뜁니다.")
+        return {}
+    common, seen = [], set()
+    for q in NAVER_COMMON:
+        for a in naver_news(q, day, 100, 2):
+            if a["u"] not in seen:
+                seen.add(a["u"]); common.append(a)
+    pool = {}
+    for cat, qs in NAVER_QUERIES.items():
+        got, cs = [], set()
+        for q in [f"{x} 건축" if cat == "design" and "건축" not in x else x for x in qs]:
+            for a in naver_news(q, day, 30, 7 if cat in ("aa", "market") else 3):
+                if a["u"] not in cs:
+                    cs.add(a["u"]); got.append(a)
+        pool[cat] = got[:20]
+    pool["_common"] = common[:40]
+    print(f"[네이버] 공통 {len(common)}건, " + ", ".join(f"{k} {len(v)}건" for k, v in pool.items() if k != "_common"))
+    return pool
+
+
+def naver_block(pool: dict, cat: str) -> str:
+    if not pool:
+        return ""
+    rows, seen = [], set()
+    for a in (pool.get(cat) or []) + ([] if cat == "aa" else pool.get("_common") or []):
+        if a["u"] in seen:
+            continue
+        seen.add(a["u"])
+        rows.append(f"- {a['w']} | {a['t']} | {a['d'][:160]} | {a['m']} | {a['u']}")
+    if not rows:
+        return ""
+    return ("\n네이버 뉴스 검색 결과(키워드 '건축'·'건설'과 분야 키워드, 관련도순, 최근 기사만). "
+            "이 목록을 먼저 살펴 주제에 맞는 기사를 고르고, 부족하면 웹 검색으로 보충하세요. "
+            "목록의 기사를 쓸 때는 끝에 있는 주소를 그대로 링크로 쓰고, 언론사 이름은 주소를 보고 적으세요. "
+            "제목과 요약은 목록 문구를 베끼지 말고 직접 새로 쓰세요.\n" + "\n".join(rows[:45]) + "\n")
+
+
 GROUPS = [
     ("design", "설계·정비사업: 재건축·재개발 설계자(설계사) 선정, 민간·공공 설계공모 결과, 주요 건축사사무소(희림·해안·삼우·건원·에이앤유·나우동인·DA그룹·정림 등) 동향"),
     ("seoul", "서울시 공공건축 설계공모: 프로젝트 서울(https://project.seoul.go.kr)에 올라온 설계공모 공고·접수마감·심사·당선작 발표와 이를 다룬 보도. 공모 상세 페이지 주소가 있으면 그 주소를 링크로 쓰세요"),
@@ -323,10 +410,11 @@ def gather_openwebui(day: dt.date, index: list) -> dict:
     prev_block, recent_block = prev_context(day, index)
     head = f"오늘은 {day.isoformat()} ({WEEKDAYS[day.weekday()]}) 입니다. 한국시간 기준입니다.\n"
     news, cal, seen = [], [], set()
+    pool = naver_pool(day)
     for cat, desc in GROUPS:
         prompt = (head + f"아래 주제만 웹 검색해서 최근 24~48시간(부족하면 7일 이내) 기사를 찾으세요.\n주제: {desc}\n"
                   f"우리 회사({COMPANY}) 관련 기사는 넣지 마세요.\n"
-                  f"어제 브리핑에 이미 실린 기사(새 진전이 없으면 제외):\n{prev_block}\n\n{GROUP_FORMAT}")
+                  f"어제 브리핑에 이미 실린 기사(새 진전이 없으면 제외):\n{prev_block}\n{naver_block(pool, cat)}\n{GROUP_FORMAT}")
         try:
             raw = extract_json(call_openwebui(prompt, day, True, cat))
         except (RuntimeError, ValueError, json.JSONDecodeError) as e:
@@ -352,7 +440,8 @@ def gather_openwebui(day: dt.date, index: list) -> dict:
     aa_prompt = (head + f"우리 회사 {COMPANY} 관련 최근 7일 보도를 웹 검색하세요. "
                  f'"AA아키그룹", "에이에이아키그룹"으로 검색하고 회사 뉴스룸 {COMPANY_NEWSROOM} 도 확인하세요. '
                  "반도체 공장·데이터센터 등 하이테크 설계 시장 소식도 확인하세요.\n"
-                 f"어제 기준 회사 최근 보도 목록(새 보도가 있으면 맨 앞에 추가해 최대 4건 유지):\n{recent_block}\n\n"
+                 f"어제 기준 회사 최근 보도 목록(새 보도가 있으면 맨 앞에 추가해 최대 4건 유지):\n{recent_block}\n"
+                 f"{naver_block(pool, 'aa')}\n"
                  'JSON 하나만 출력: {"today": [{"d": "YYYY.MM.DD", "t": "제목", "p": "한 줄 요약", "u": "https://..."}], '
                  '"recent": [{"d": "YYYY.MM.DD", "t": "제목", "u": "https://..."}], '
                  '"signal": "회사 사업(반도체·데이터센터 등 하이테크, 주거, 업무·복합)과 연결되는 오늘의 시장 신호 1~2문장"}. '
