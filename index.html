@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>건설·건축 데일리 브리핑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 사내 조간 브리핑 — 담백하고 빠르게 훑는 신문 1면
+   IDEA: 경제지 산업면 한 장 + 지난 호 보관함
+   PICTURE: 오늘의 숫자 패널, 그 아래 자사(AA아키그룹) 전용 박스
+   COLOUR and TYPE: 흰 바탕, 잉크 #121212, 레드 #e3120b, 슬레이트 #2e6f8e / Noto Serif KR + Noto Sans KR
+   LAYOUT: 마스트헤드(오늘/지난 브리핑 탭) → 핵심 3줄 + 숫자 → AA 박스 → 분야 필터 → 기사 칼럼 → 일정 */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#10191e);--ink:light-dark(#121212,#eef2f4);--mute:light-dark(#5b6670,#9fb0ba);
+--rule:light-dark(#121212,#d9e2e7);--hair:light-dark(#d6dde1,#2a3a44);--red:#e3120b;--slate:light-dark(#2e6f8e,#7fb6d1);
+--panel:light-dark(#e3ecf0,#182a33);--aa:light-dark(#2e6f8e,#1d4a60)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif;overflow-x:clip;word-break:keep-all}
+.wrap{max-width:1240px;margin:0 auto;padding:0 max(4vw,16px)}
+a{color:inherit}
+.mast{border-bottom:3px solid var(--rule);padding:22px 0 14px}
+.mrow{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.tab{display:inline-block;background:var(--red);color:#fff;font-weight:700;font-size:14px;padding:4px 10px}
+.views{display:flex;gap:6px}
+.views a,.nav button{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid var(--hair);text-decoration:none;font:500 15px "Noto Sans KR",sans-serif;background:transparent;color:var(--ink);cursor:pointer}
+.views a[aria-current=page]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.nav button:disabled{opacity:.35;cursor:default}
+a:focus-visible,button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.mast h1{font:700 clamp(32px,5vw,50px)/1.05 "Noto Serif KR",serif;margin:0;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;color:var(--mute);font-size:14px;margin-top:10px}
+.nav{display:flex;gap:6px;margin-left:auto}
+.top{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:32px;padding:26px 0;border-bottom:1px solid var(--rule)}
+h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
+.key{margin:0;padding:0;list-style:none;counter-reset:k}
+.key li{position:relative;padding:12px 0 12px 34px;border-top:1px solid var(--hair);font-size:17px}
+.key li::before{counter-increment:k;content:counter(k);position:absolute;left:0;top:12px;font:700 20px/1.3 "Noto Serif KR",serif;color:var(--red)}
+.nums{background:var(--panel);padding:22px}
+.big{font:700 clamp(40px,6vw,56px)/1 "Noto Serif KR",serif;white-space:nowrap}
+.big small{font-size:20px;margin-left:6px}
+.up{color:var(--red);font-weight:700;white-space:nowrap}
+.lbl{font-size:14px;color:var(--mute)}
+.gauge{margin-top:20px;padding-top:16px;border-top:1px solid var(--hair)}
+.track{position:relative;height:14px;background:light-dark(#fff,#0c1418);border:1px solid var(--hair);margin:30px 0 6px}
+.fill{position:absolute;inset:0 auto 0 0;background:var(--slate)}
+.base{position:absolute;top:-8px;bottom:-8px;right:0;border-right:2px solid var(--ink)}
+.pin{position:absolute;top:-28px;transform:translateX(-50%);font-weight:700;font-size:15px;white-space:nowrap}
+.scale{display:flex;justify-content:space-between;font-size:13px;color:var(--mute)}
+.aa{margin:26px 0 6px;border:2px solid var(--aa);display:grid;grid-template-columns:220px minmax(0,1fr)}
+.aa .hd{background:var(--aa);color:#fff;padding:20px}
+.aa .hd b{display:block;font:700 22px/1.25 "Noto Serif KR",serif;margin-bottom:6px}
+.aa .hd span{font-size:14px;opacity:.85}
+.aa .bd{padding:16px 22px}
+.aa .none{font-weight:500;margin:0 0 10px}
+.aa ul{list-style:none;margin:0;padding:0}
+.aa li{display:grid;grid-template-columns:6.5em minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px solid var(--hair);font-size:15px}
+.aa li time{color:var(--mute);white-space:nowrap}
+.aa .sig{margin:10px 0 0;padding:10px 12px;background:var(--panel);font-size:15px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;padding:18px 0;border-bottom:1px solid var(--hair);position:sticky;top:0;background:var(--bg);z-index:2}
+.filters button{font:500 15px "Noto Sans KR",sans-serif;min-height:44px;padding:0 16px;border:1px solid var(--hair);background:transparent;color:var(--ink);cursor:pointer}
+.filters button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 40px}
+.grid.one{grid-template-columns:minmax(0,1fr)}
+.sec{padding:24px 0;border-bottom:1px solid var(--hair)}
+.sec h2{display:flex;align-items:baseline;gap:10px}
+.sec h2 span{font:500 14px "Noto Sans KR",sans-serif;color:var(--mute)}
+.item{padding:14px 0;border-top:1px solid var(--hair)}
+.item h3{font:700 18px/1.4 "Noto Serif KR",serif;margin:0 0 6px}
+.item p{margin:0 0 8px}
+.src{font-size:13px;color:var(--mute);display:flex;flex-wrap:wrap;gap:4px 12px}
+.src a,.aa a,.arc a{color:var(--slate);text-underline-offset:3px}
+.cal{padding:24px 0;border-bottom:3px solid var(--rule)}
+.cal table{width:100%;border-collapse:collapse}
+.cal td{padding:10px 8px;border-top:1px solid var(--hair);vertical-align:top}
+.cal td:first-child{white-space:nowrap;font-weight:700;width:7em}
+.arc{padding:24px 0 30px;border-bottom:3px solid var(--rule)}
+.arc .tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.arc input{font:16px "Noto Sans KR",sans-serif;min-height:44px;padding:0 12px;border:1px solid var(--hair);background:var(--bg);color:var(--ink);width:min(100%,360px)}
+.mon{font:700 18px "Noto Serif KR",serif;margin:22px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.day{display:grid;grid-template-columns:8.5em minmax(0,1fr) auto;gap:14px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--hair);text-decoration:none}
+.day:hover .h{text-decoration:underline}
+.day .d{font-weight:700;white-space:nowrap;color:var(--ink)}
+.day .h{color:var(--ink)}
+.day .n{font-size:13px;color:var(--mute);white-space:nowrap}
+.day .n b{color:var(--slate)}
+.msg{padding:30px 0;color:var(--mute)}
+.foot{padding:18px 0 40px;font-size:13px;color:var(--mute)}
+@media(max-width:860px){.top,.grid{grid-template-columns:minmax(0,1fr)}.aa{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.filters{position:static}.cal td:first-child{width:5.5em}.day{grid-template-columns:minmax(0,1fr)}.day{gap:2px}.nav{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="mast">
+<div class="mrow">
+<span class="tab">사내 공유용</span>
+<nav class="views" aria-label="보기">
+<a href="#today" id="vToday">오늘 브리핑</a>
+<a href="#archive" id="vArc">지난 브리핑</a>
+</nav>
+</div>
+<h1>건설·건축 데일리 브리핑</h1>
+<div class="meta"><span id="dateLine">불러오는 중…</span><span>매일 오전 7시 30분 발행</span>
+<span class="nav" id="dnav"><button type="button" id="prev">← 이전 날</button><button type="button" id="next">다음 날 →</button></span></div>
+</header>
+<main id="main"><p class="msg">브리핑을 불러오는 중입니다.</p></main>
+<footer class="foot">
+요약은 원문을 읽고 새로 쓴 것입니다. 기사 원문은 각 언론사에 저작권이 있으므로 링크로 확인하고, 본문을 복사해 재배포하지 마세요.
+</footer>
+</div>
+
+<script>
+{
+const CATS=[["all","전체"],["design","설계·정비사업"],["build","시공 수주"],["public","공공 발주"],["market","경기 지표"],["biz","업계·금융"]];
+const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const url=v=>/^https?:\/\//.test(String(v))?esc(v):"#";
+const main=document.getElementById("main"),dl=document.getElementById("dateLine"),dnav=document.getElementById("dnav");
+const prev=document.getElementById("prev"),next=document.getElementById("next");
+let IDX=[],cache={},cur="all",shown=null;
+try{const v=localStorage.getItem("brief-cat");if(v&&CATS.some(c=>c[0]===v))cur=v}catch(e){}
+const fmt=(d,w)=>{const [y,m,dd]=d.split("-");return `${y}년 ${+m}월 ${+dd}일${w?` (${w})`:""}`};
+const getDay=async d=>{if(cache[d])return cache[d];const r=await fetch(`data/${d}.json`,{cache:"no-store"});if(!r.ok)throw new Error(r.status);return cache[d]=await r.json()};
+
+function newsHTML(D){
+ const cats=CATS.slice(1).filter(([k])=>cur==="all"||k===cur);
+ const html=cats.map(([k,n])=>{const its=(D.news||[]).filter(x=>x.c===k);if(!its.length)return"";
+  return `<section class="sec"><h2>${n}<span>${its.length}건</span></h2>${its.map(x=>`<article class="item"><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p><div class="src">${(x.s||[]).map(s=>`<span>${esc(s[0])} · ${esc(s[1])} · <a href="${url(s[2])}" target="_blank" rel="noopener">원문</a></span>`).join("")}</div></article>`).join("")}</section>`}).join("");
+ return html||`<p class="msg">이 분야의 기사가 없습니다.</p>`;
+}
+function filtersHTML(D){return CATS.map(([k,n])=>`<button type="button" data-k="${k}" aria-pressed="${k===cur}">${n}${k==="all"?"":" "+(D.news||[]).filter(x=>x.c===k).length}</button>`).join("")}
+
+function dayView(D){
+ const F=D.figure,G=D.gauge,A=D.aa||{};
+ const g=G?`<div class="gauge"><div class="lbl">${esc(G.label)}</div><div class="track" role="img" aria-label="${esc(G.value)}"><div class="fill" style="width:${Math.min(100,+G.value||0)}%"></div><div class="pin" style="left:${Math.min(100,+G.value||0)}%">${esc(G.value)}</div><div class="base"></div></div><div class="scale"><span>0</span><span>기준선 100</span></div><div class="lbl" style="margin-top:8px">${esc(G.note)}</div></div>`:"";
+ const nums=F?`<aside class="nums" aria-label="오늘의 숫자"><div class="lbl">${esc(F.label)}</div><div class="big">${esc(F.value)}<small>${esc(F.unit)}</small></div><div><span class="up">${esc(F.change)}</span> <span class="lbl">· ${esc(F.note)}</span></div>${g}</aside>`:"";
+ const today=(A.today||[]);
+ const aa=`<section class="aa" id="aa"><div class="hd"><b>AA아키그룹 소식</b><span>우리 회사 관련 보도</span></div><div class="bd">
+  ${today.length?`<ul>${today.map(x=>`<li><time>${esc(x.d)}</time><span>${esc(x.t)}${x.p?` — ${esc(x.p)}`:""} <a href="${url(x.u)}" target="_blank" rel="noopener">원문</a></span></li>`).join("")}</ul>`:`<p class="none">오늘은 새로 보도된 소식이 없습니다.</p>`}
+  ${(A.recent||[]).length?`<div class="lbl" style="margin-top:12px">최근 보도</div><ul>${A.recent.map(x=>`<li><time>${esc(x.d)}</time><span>${esc(x.t)} <a href="${url(x.u)}" target="_blank" rel="noopener">보기</a></span></li>`).join("")}</ul>`:""}
+  ${A.signal?`<p class="sig"><b>관련 시장 신호</b> · ${esc(A.signal)}</p>`:""}
+ </div></section>`;
+ const cal=(D.cal||[]).length?`<section class="cal"><h2>이번 주·다가오는 일정</h2><table><tbody>${D.cal.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("")}</tbody></table></section>`:"";
+ main.innerHTML=`<section class="top"><div><h2>오늘의 핵심</h2><ol class="key">${(D.key||[]).map(k=>`<li><b>${esc(k.b)}</b> ${esc(k.t)}</li>`).join("")}</ol></div>${nums}</section>${aa}
+ <nav class="filters" id="filters" aria-label="분야 필터">${filtersHTML(D)}</nav><div class="grid${cur==="all"?"":" one"}" id="grid">${newsHTML(D)}</div>${cal}`;
+ document.getElementById("filters").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;cur=b.dataset.k;try{localStorage.setItem("brief-cat",cur)}catch(err){}
+  document.getElementById("filters").innerHTML=filtersHTML(D);const gr=document.getElementById("grid");gr.className="grid"+(cur==="all"?"":" one");gr.innerHTML=newsHTML(D)});
+}
+
+function arcView(q=""){
+ dl.textContent=`보관된 브리핑 ${IDX.length}일치`;dnav.style.display="none";
+ const ql=q.trim().toLowerCase();
+ const list=IDX.filter(x=>!ql||(x.head+x.date).toLowerCase().includes(ql));
+ const byM={};list.forEach(x=>{const m=x.date.slice(0,7);(byM[m]=byM[m]||[]).push(x)});
+ const body=Object.keys(byM).sort().reverse().map(m=>`<div class="mon">${+m.slice(0,4)}년 ${+m.slice(5)}월</div>${byM[m].map(x=>`<a class="day" href="#d-${esc(x.date)}"><span class="d">${esc(fmt(x.date,x.weekday))}</span><span class="h">${esc(x.head)}</span><span class="n">기사 ${esc(x.count)}건${x.aa?` · <b>AA 소식 ${esc(x.aa)}건</b>`:""}</span></a>`).join("")}`).join("");
+ main.innerHTML=`<section class="arc"><h2>지난 브리핑</h2><div class="tools"><label for="q" class="lbl">제목으로 찾기</label><input id="q" type="search" placeholder="예: 목동, 희림, LH" value="${esc(q)}"></div><div id="arcList">${body||`<p class="msg">찾는 브리핑이 없습니다.</p>`}</div></section>`;
+ const qi=document.getElementById("q");qi.addEventListener("input",()=>{const p=qi.selectionStart;arcView(qi.value);const n=document.getElementById("q");n.focus();n.setSelectionRange(p,p)});
+}
+
+async function route(){
+ const h=location.hash.slice(1);
+ document.getElementById("vArc").toggleAttribute("aria-current",h==="archive");
+ document.getElementById("vToday").toggleAttribute("aria-current",h!=="archive");
+ if(h==="archive"){document.getElementById("vArc").setAttribute("aria-current","page");arcView();return}
+ document.getElementById("vToday").setAttribute("aria-current","page");
+ const want=h.startsWith("d-")?h.slice(2):null;
+ const d=(want&&IDX.some(x=>x.date===want))?want:IDX[0]?.date;
+ if(!d){main.innerHTML=`<p class="msg">아직 발행된 브리핑이 없습니다.</p>`;return}
+ dnav.style.display="";const i=IDX.findIndex(x=>x.date===d);
+ prev.disabled=i>=IDX.length-1;next.disabled=i<=0;shown=i;
+ try{const D=await getDay(d);dl.textContent=fmt(D.date,D.weekday)+(i===0?" · 최신호":"");dayView(D);if(shown===i&&want)window.scrollTo(0,0)}
+ catch(e){main.innerHTML=`<p class="msg">${esc(d)} 브리핑을 불러오지 못했습니다.</p>`}
+}
+prev.addEventListener("click",()=>{if(shown<IDX.length-1)location.hash="d-"+IDX[shown+1].date});
+next.addEventListener("click",()=>{if(shown>0)location.hash=shown-1===0?"today":"d-"+IDX[shown-1].date});
+window.addEventListener("hashchange",route);
+fetch("data/index.json",{cache:"no-store"}).then(r=>r.json()).then(j=>{IDX=(Array.isArray(j)?j:[]).sort((a,b)=>a.date<b.date?1:-1);route()})
+ .catch(()=>{main.innerHTML=`<p class="msg">브리핑 목록을 불러오지 못했습니다. 잠시 후 새로고침해 주세요.</p>`});
+}
+</script>
+</body>
+</html>
