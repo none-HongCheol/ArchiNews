@@ -285,7 +285,7 @@ async function homeView(){
  let keys=(D.key||[]).map(k=>({b:k.b,t:k.t,n:null}));
  let drop=-1,dmax=1;keys.forEach((k,i)=>{const o=overlap(k.b+" "+k.t);if(o>dmax){dmax=o;drop=i}});
  if(drop>=0)keys.splice(drop,1);
- for(const [k] of CATS.slice(1)){if(keys.length>=3)break;const n=news.find(x=>x.c===k&&x!==lead&&!keys.some(y=>y.n===x)&&overlap(x.t)<2);if(n)keys.push({b:n.t,t:"",n})}
+ for(const [k] of CATS.slice(1)){if(keys.length>=3)break;const n=news.find(x=>x.c===k&&x!==lead&&!keys.some(y=>y.n===x)&&overlap(x.t)<2&&!keys.some(y=>{const a=words(y.b+" "+y.t);let c=0;words(x.t).forEach(w=>{if(a.has(w))c++});return c>=3}));if(n)keys.push({b:n.t,t:"",n})}
  const catName=Object.fromEntries(CATS);
  const src=n=>n.s&&n.s[0]?`${esc(n.s[0][0])} · ${esc(n.s[0][1])}`:"";
  const link=(n,cls,label)=>n.s&&n.s[0]?orig(n.s[0][2],n.s[0][0],n.t,`<span class="${cls}">${label}</span>`):`<span class="${cls}">${label}</span>`;
