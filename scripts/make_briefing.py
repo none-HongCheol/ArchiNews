@@ -163,6 +163,30 @@ def build_prompt(day: dt.date, index: list) -> str:
 
 
 # ---------------------------------------------------------------- 모델 호출: Open WebUI
+def resolve_model(base: str, key: str, wanted: str) -> str:
+    """모델 ID 또는 화면에 보이는 모델 이름을 받아 실제 모델 ID를 찾습니다."""
+    try:
+        listing = http("GET", f"{base}/api/models", key) or {}
+    except RuntimeError as e:
+        print(f"모델 목록을 읽지 못해 입력값을 그대로 씁니다: {e}")
+        return wanted
+    models = listing.get("data", listing) if isinstance(listing, dict) else listing
+    models = [m for m in (models or []) if isinstance(m, dict)]
+    norm = lambda v: re.sub(r"\s+", "", str(v or "")).lower()
+    w = norm(wanted)
+    for field in ("id", "name"):
+        for m in models:
+            if norm(m.get(field)) == w:
+                print(f"사용 모델: {m.get('name')} (ID: {m.get('id')})")
+                return m["id"]
+    for m in models:
+        if w and (w in norm(m.get("name")) or w in norm(m.get("id"))):
+            print(f"사용 모델(부분 일치): {m.get('name')} (ID: {m.get('id')})")
+            return m["id"]
+    names = ", ".join(f"{m.get('name')} [{m.get('id')}]" for m in models[:40])
+    raise RuntimeError(f"모델 '{wanted}'을(를) 찾지 못했습니다. 사용할 수 있는 모델: {names}")
+
+
 def call_openwebui(prompt: str, day: dt.date) -> str:
     """회사 Open WebUI에서 웹 검색을 켜고 답을 받아옵니다.
 
@@ -173,7 +197,7 @@ def call_openwebui(prompt: str, day: dt.date) -> str:
     """
     base = need("OPENWEBUI_URL").rstrip("/")
     key = need("OPENWEBUI_API_KEY")
-    model = need("OPENWEBUI_MODEL")
+    model = resolve_model(base, key, need("OPENWEBUI_MODEL"))
 
     uid, aid = str(uuid.uuid4()), str(uuid.uuid4())
     ts = int(time.time())
