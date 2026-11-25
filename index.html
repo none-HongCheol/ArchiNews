@@ -161,6 +161,67 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
  body.fit main{flex:1;min-height:0;overflow:hidden}
  body.fit .front{height:100%;box-sizing:border-box}
  body.fit .foot{display:none}
+ /* 나머지 탭도 한 화면: 화면은 고정, 긴 목록만 칸 안에서 스크롤 */
+ body.fit .pane{overflow:auto;min-height:0;scrollbar-width:thin;overscroll-behavior:contain}
+ body.fit .dv{height:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.3fr);gap:36px;padding-top:14px}
+ body.fit .dvL{padding-right:10px}
+ body.fit .dvL .top{grid-template-columns:minmax(0,1fr);gap:18px;padding:0 0 18px}
+ body.fit .dvL .key li{font-size:15.5px;padding:9px 0 9px 30px}
+ body.fit .dvL .key li::before{top:9px;font-size:18px}
+ body.fit .dvL .aa{grid-template-columns:minmax(0,1fr);margin:16px 0 0}
+ body.fit .dvL .aa .hd{padding:12px 16px}
+ body.fit .dvL .cal{border-bottom:0}
+ body.fit .dvR{padding-right:10px}
+ body.fit .dvR .filters{padding:0 0 12px}
+ body.fit .dvR .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:0 30px}
+ body.fit .dvR .grid.one{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.fit .dvR .grid.one .sec{grid-column:1/-1}
+ body.fit .dvR .sec{padding:14px 0}
+ body.fit .dvR .item h3{font-size:16.5px}
+ body.fit .dvR .item p{font-size:14.5px;line-height:1.6}
+ body.fit .aav,body.fit .psv,body.fit .arc{height:100%;display:flex;flex-direction:column;padding:16px 0 0;border-bottom:0}
+ body.fit .aav .list{flex:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 40px;align-content:start}
+ body.fit .psg{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:36px;margin-top:8px}
+ body.fit .psg h3{margin-top:4px;position:sticky;top:0;background:var(--bg);padding-bottom:6px;z-index:1}
+ body.fit .psg .pane{padding-right:10px}
+ body.fit .psv .arcg{grid-template-columns:repeat(3,minmax(0,1fr))}
+ body.fit .arcl{flex:1;columns:2;column-gap:48px}
+ body.fit .arcl .mon{break-after:avoid;margin-top:0}
+ body.fit .arcl .day{break-inside:avoid}
+}
+@media(min-width:1500px) and (min-height:700px){
+ /* 오늘 브리핑: 기사는 3단 신문식으로 채우고 요약은 3줄까지 */
+ body.fit .dvR .grid{display:block;columns:3;column-gap:30px}
+ body.fit .dvR .grid.one{columns:2}
+ body.fit .dvR .sec{break-inside:auto;padding:0 0 14px}
+ body.fit .dvR .sec h2{break-after:avoid;font-size:20px;margin-bottom:6px}
+ body.fit .dvR .item{break-inside:avoid;padding:10px}
+ body.fit .dvR .item p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:4px}
+ body.fit .dvL .top{gap:12px;padding-bottom:12px}
+ body.fit .dvL h2{font-size:20px;margin-bottom:6px}
+ body.fit .dvL .key li{font-size:15px;line-height:1.55;padding:7px 0 7px 28px}
+ body.fit .dvL .key li::before{top:7px}
+ body.fit .dvL .nums{padding:12px 16px}
+ body.fit .dvL .big{font-size:38px}
+ body.fit .dvL .gauge{margin-top:8px;padding-top:8px}
+ body.fit .dvL .track{margin:24px 0 4px}
+ body.fit .dvL .aa{margin-top:12px}
+ body.fit .dvL .aa .bd{padding:10px 16px}
+ body.fit .dvL .cal{padding:12px 0 0}
+ body.fit .dvL .cal td{padding:6px;font-size:14.5px;line-height:1.5}
+ /* 프로젝트 서울: 공모알림 2단, 아카이브 2열 */
+ body.fit .psg{grid-template-columns:minmax(0,1.3fr) minmax(0,1.15fr)}
+ body.fit .psg h3{margin-bottom:4px}
+ body.fit .psg .nl{columns:2;column-gap:28px}
+ body.fit .psg .nl li{break-inside:avoid}
+ body.fit .psg .nl a{grid-template-columns:5.6em minmax(0,1fr);gap:8px;padding:7px 0;font-size:14.5px;line-height:1.45}
+ body.fit .psg .nl small{font-size:12px}
+ body.fit .psv .arcg{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ body.fit .psv .arcg a{padding:8px 12px;gap:2px;line-height:1.4}
+ body.fit .psv .arcg b{font-size:15px}
+ body.fit .psv .arcg span{font-size:12.5px}
+ body.fit .psv .links{margin:8px 0 0}
+ body.fit .psv>.lbl{margin:0}
 }
 @media(max-width:1499px){.fcols{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:1100px){.front{grid-template-columns:minmax(0,1fr)}.fside{border-left:0;padding-left:0}.fcols{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -317,8 +378,8 @@ async function homeView(){
 /* ---------- 날짜별 브리핑 ---------- */
 function dayView(D){
  const cal=(D.cal||[]).length?`<section class="cal"><h2>이번 주·다가오는 일정</h2><table><tbody>${D.cal.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("")}</tbody></table></section>`:"";
- main.innerHTML=`<section class="top"><div><h2>오늘의 핵심</h2>${keyHTML(D)}</div>${numsHTML(D)}</section>${aaHTML(D)}
- <nav class="filters" id="filters" aria-label="분야 필터">${filtersHTML(D)}</nav><div class="grid${cur==="all"?"":" one"}" id="grid">${newsHTML(D)}</div>${cal}`;
+ main.innerHTML=`<div class="dv"><div class="dvL pane"><section class="top"><div><h2>오늘의 핵심</h2>${keyHTML(D)}</div>${numsHTML(D)}</section>${aaHTML(D)}${cal}</div>
+ <div class="dvR pane"><nav class="filters" id="filters" aria-label="분야 필터">${filtersHTML(D)}</nav><div class="grid${cur==="all"?"":" one"}" id="grid">${newsHTML(D)}</div></div></div>`;
  document.getElementById("filters").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;cur=b.dataset.k;try{localStorage.setItem("brief-cat",cur)}catch(err){}
   document.getElementById("filters").innerHTML=filtersHTML(D);const gr=document.getElementById("grid");gr.className="grid"+(cur==="all"?"":" one");gr.innerHTML=newsHTML(D)});
 }
@@ -335,7 +396,7 @@ async function aaView(){
  const latest=all.find(Boolean),sig=latest&&latest.aa&&latest.aa.signal;
  main.innerHTML=`<section class="aav"><h2>AA아키그룹 소식</h2><p class="lbl">매일 브리핑에서 찾은 회사 관련 보도를 날짜순으로 모았어요. 제목을 누르면 원문이 열려요.</p>
  ${sig?`<p class="sig" style="padding:10px 12px;background:var(--panel)"><b>최근 시장 신호</b> · ${esc(sig)}</p>`:""}
- ${items.length?`<ul class="list">${items.map(x=>`<li><time>${esc(x.d)}</time><div><b>${orig(x.u,"AA아키그룹 관련 보도",x.t,esc(x.t))}</b>${x.p?`<span class="lbl">${esc(x.p)}</span>`:""}</div></li>`).join("")}</ul>`:`<p class="msg">아직 모인 보도가 없습니다.</p>`}
+ ${items.length?`<ul class="list pane">${items.map(x=>`<li><time>${esc(x.d)}</time><div><b>${orig(x.u,"AA아키그룹 관련 보도",x.t,esc(x.t))}</b>${x.p?`<span class="lbl">${esc(x.p)}</span>`:""}</div></li>`).join("")}</ul>`:`<p class="msg">아직 모인 보도가 없습니다.</p>`}
  <div class="links"><a class="btn" href="https://www.aaarchigroup.com/news" target="_blank" rel="noopener">회사 뉴스룸 바로가기 ↗</a></div></section>`;
 }
 
@@ -350,10 +411,10 @@ async function psView(){
  main.innerHTML=`<section class="psv"><h2>프로젝트 서울</h2>
  <p class="lbl">서울시 설계공모 통합 누리집의 공모알림과 설계·건설 아카이브를 매일 아침 모아 와요.${P.updated?` 마지막 갱신 ${esc(P.updated)}.`:""} 프로젝트 서울은 다른 사이트 안에서 열리지 않게 설정돼 있어서, 항목을 누르면 새 탭으로 열려요.</p>
  <div class="links">${ext(PS+"/view/viewListCptt.do?stage=open","진행 중 공고")}${ext(PS+"/view/viewListCptt.do?stage=review","심사")}${ext(PS+"/view/viewListCptt.do?stage=results","결과")}${ext(PS+"/view/viewListArchive.do","설계·건설 아카이브")}${ext(PS+"/view/viewListArchive.do?tab=award","서울시건축상")}</div>
- <h3>공모알림</h3>
- ${N.length?`<ul class="nl">${N.map(x=>`<li><a href="${url(x.u)}" target="_blank" rel="noopener"><time>${esc(x.d)}</time><span><small>${esc(x.c)}</small><b>${esc(x.t)}</b></span></a></li>`).join("")}</ul>`:`<p class="msg">아직 가져온 공모알림이 없습니다.</p>`}
- <h3>설계·건설 아카이브</h3>
- ${A.length?`<div class="arcg">${A.map(x=>`<a href="${url(x.u)}" target="_blank" rel="noopener"><span class="st">${esc(x.stage)}</span><b>${esc(x.t)}</b><span>${esc(x.meta)}</span><span>${esc(x.info)}</span></a>`).join("")}</div>`:`<p class="msg">아직 가져온 아카이브가 없습니다.</p>`}
+ <div class="psg"><div class="pane"><h3>공모알림</h3>
+ ${N.length?`<ul class="nl">${N.map(x=>`<li><a href="${url(x.u)}" target="_blank" rel="noopener"><time>${esc(x.d)}</time><span><small>${esc(x.c)}</small><b>${esc(x.t)}</b></span></a></li>`).join("")}</ul>`:`<p class="msg">아직 가져온 공모알림이 없습니다.</p>`}</div>
+ <div class="pane"><h3>설계·건설 아카이브</h3>
+ ${A.length?`<div class="arcg">${A.map(x=>`<a href="${url(x.u)}" target="_blank" rel="noopener"><span class="st">${esc(x.stage)}</span><b>${esc(x.t)}</b><span>${esc(x.meta)}</span><span>${esc(x.info)}</span></a>`).join("")}</div>`:`<p class="msg">아직 가져온 아카이브가 없습니다.</p>`}</div></div>
  </section>`;
 }
 
@@ -364,7 +425,7 @@ function arcView(q=""){
  const list=IDX.filter(x=>!ql||(x.head+x.date).toLowerCase().includes(ql));
  const byM={};list.forEach(x=>{const m=x.date.slice(0,7);(byM[m]=byM[m]||[]).push(x)});
  const body=Object.keys(byM).sort().reverse().map(m=>`<div class="mon">${+m.slice(0,4)}년 ${+m.slice(5)}월</div>${byM[m].map(dayRow).join("")}`).join("");
- main.innerHTML=`<section class="arc"><h2>지난 브리핑</h2><div class="tools"><label for="q" class="lbl">제목으로 찾기</label><input id="q" type="search" placeholder="예: 목동, 희림, LH" value="${esc(q)}"></div><div>${body||`<p class="msg">찾는 브리핑이 없습니다.</p>`}</div></section>`;
+ main.innerHTML=`<section class="arc"><h2>지난 브리핑</h2><div class="tools"><label for="q" class="lbl">제목으로 찾기</label><input id="q" type="search" placeholder="예: 목동, 희림, LH" value="${esc(q)}"></div><div class="arcl pane">${body||`<p class="msg">찾는 브리핑이 없습니다.</p>`}</div></section>`;
  const qi=document.getElementById("q");qi.addEventListener("input",()=>{const p=qi.selectionStart;arcView(qi.value);const n=document.getElementById("q");n.focus();n.setSelectionRange(p,p)});
 }
 
@@ -396,7 +457,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&reader.classList.co
 function setTab(id){["vHome","vToday","vAA","vPS","vArc"].forEach(t=>{const el=document.getElementById(t);if(t===id)el.setAttribute("aria-current","page");else el.removeAttribute("aria-current")})}
 async function route(){
  const h=location.hash.slice(1);
- document.body.classList.toggle("fit",h===""||h==="home");
+ document.body.classList.add("fit");
  if(h==="archive"){setTab("vArc");arcView();return}
  if(h==="aa"){setTab("vAA");await aaView();return}
  if(h==="ps"){setTab("vPS");await psView();return}
