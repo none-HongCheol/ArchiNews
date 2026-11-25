@@ -67,7 +67,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .aa li time{color:var(--mute);white-space:nowrap}
 .aa .sig{margin:10px 0 0;padding:10px 12px;background:var(--panel);font-size:15px}
 /* 홈 */
-.cats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;padding:26px 0;border-bottom:1px solid var(--hair)}
+.cats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:26px 0;border-bottom:1px solid var(--hair)}
 .cat{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--hair);background:transparent;color:var(--ink);text-align:left;cursor:pointer;font:inherit;min-height:120px}
 .cat:hover{border-color:var(--ink)}
 .cat b{font:700 17px/1.3 "Noto Serif KR",serif}
@@ -83,7 +83,10 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .sec{padding:24px 0;border-bottom:1px solid var(--hair)}
 .sec h2{display:flex;align-items:baseline;gap:10px}
 .sec h2 span{font:500 14px "Noto Sans KR",sans-serif;color:var(--mute)}
-.item{padding:14px 0;border-top:1px solid var(--hair)}
+.item{padding:14px 10px;margin:0 -10px;border-top:1px solid var(--hair);cursor:pointer}
+.item:hover{background:var(--panel)}
+.item h3 a{text-decoration:none}
+.item:hover h3 a{text-decoration:underline}
 .item h3{font:700 18px/1.4 "Noto Serif KR",serif;margin:0 0 6px}
 .item p{margin:0 0 8px}
 .src{font-size:13px;color:var(--mute);display:flex;flex-wrap:wrap;gap:4px 12px}
@@ -92,6 +95,14 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .cal table{width:100%;border-collapse:collapse}
 .cal td{padding:10px 8px;border-top:1px solid var(--hair);vertical-align:top}
 .cal td:first-child{white-space:nowrap;font-weight:700;width:7em}
+/* AA 소식 탭 */
+.aav{padding:24px 0 30px;border-bottom:3px solid var(--rule)}
+.aav .list{list-style:none;margin:0;padding:0}
+.aav .list li{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:14px;padding:14px 0;border-top:1px solid var(--hair)}
+.aav .list time{font-weight:700;white-space:nowrap}
+.aav .list b{display:block;font:700 17px/1.4 "Noto Serif KR",serif}
+.aav .links{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.quick{display:flex;flex-wrap:wrap;gap:8px;padding:18px 0;border-bottom:1px solid var(--hair)}
 /* 지난 브리핑 */
 .arc{padding:24px 0 30px;border-bottom:3px solid var(--rule)}
 .arc .tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
@@ -115,7 +126,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .reader .note{margin:0;padding:8px 14px;font-size:13px;color:var(--mute);background:var(--panel)}
 .reader iframe{flex:1;width:100%;border:0;background:#fff}
 .foot{padding:18px 0 40px;font-size:13px;color:var(--mute)}
-@media(max-width:860px){.top,.grid{grid-template-columns:minmax(0,1fr)}.aa{grid-template-columns:minmax(0,1fr)}.cats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:860px){.top,.grid{grid-template-columns:minmax(0,1fr)}.aa{grid-template-columns:minmax(0,1fr)}.cats{grid-template-columns:repeat(2,minmax(0,1fr))}.aav .list li{grid-template-columns:minmax(0,1fr);gap:2px}}
 @media(max-width:600px){.filters{position:static}.cal td:first-child{width:5.5em}.day{grid-template-columns:minmax(0,1fr);gap:2px}.nav{margin-left:0}.reader .box{width:100vw}}
 @media(prefers-reduced-motion:no-preference){.reader.open .box{animation:slide .2s ease-out}@keyframes slide{from{transform:translateX(40px);opacity:.6}to{transform:none;opacity:1}}}
 </style>
@@ -128,6 +139,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 <nav class="views" aria-label="보기">
 <a href="#home" id="vHome">홈</a>
 <a href="#today" id="vToday">오늘 브리핑</a>
+<a href="#aa" id="vAA">AA 소식</a>
 <a href="#archive" id="vArc">지난 브리핑</a>
 </nav>
 </div>
@@ -156,7 +168,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 
 <script>
 {
-const CATS=[["all","전체"],["design","설계·정비사업"],["build","시공 수주"],["public","공공 발주"],["market","경기 지표"],["biz","업계·금융"]];
+const CATS=[["all","전체"],["design","설계·정비사업"],["seoul","서울시 설계공모"],["build","시공 수주"],["public","공공 발주"],["market","경기 지표"],["biz","업계·금융"]];
 const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const url=v=>/^https?:\/\//.test(String(v))?esc(v):"#";
 const main=document.getElementById("main"),dl=document.getElementById("dateLine"),dnav=document.getElementById("dnav");
@@ -177,7 +189,7 @@ function numsHTML(D){
 }
 function aaHTML(D){
  const A=D.aa||{},today=A.today||[];
- return `<section class="aa" id="aa"><div class="hd"><b>AA아키그룹 소식</b><span>우리 회사 관련 보도</span></div><div class="bd">
+ return `<section class="aa"><div class="hd"><b>AA아키그룹 소식</b><span>우리 회사 관련 보도</span></div><div class="bd">
   ${today.length?`<ul>${today.map(x=>`<li><time>${esc(x.d)}</time><span>${esc(x.t)}${x.p?` — ${esc(x.p)}`:""} ${orig(x.u,"AA아키그룹 관련 보도",x.t)}</span></li>`).join("")}</ul>`:`<p class="none">오늘은 새로 보도된 소식이 없습니다.</p>`}
   ${(A.recent||[]).length?`<div class="lbl" style="margin-top:12px">최근 보도</div><ul>${A.recent.map(x=>`<li><time>${esc(x.d)}</time><span>${esc(x.t)} ${orig(x.u,"AA아키그룹 관련 보도",x.t,"보기")}</span></li>`).join("")}</ul>`:""}
   ${A.signal?`<p class="sig"><b>관련 시장 신호</b> · ${esc(A.signal)}</p>`:""}
@@ -186,7 +198,7 @@ function aaHTML(D){
 function newsHTML(D){
  const cats=CATS.slice(1).filter(([k])=>cur==="all"||k===cur);
  const html=cats.map(([k,n])=>{const its=(D.news||[]).filter(x=>x.c===k);if(!its.length)return"";
-  return `<section class="sec"><h2>${n}<span>${its.length}건</span></h2>${its.map(x=>`<article class="item"><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p><div class="src">${(x.s||[]).map(s=>`<span>${esc(s[0])} · ${esc(s[1])} · ${orig(s[2],s[0],x.t)}</span>`).join("")}</div></article>`).join("")}</section>`}).join("");
+  return `<section class="sec"><h2>${n}<span>${its.length}건</span></h2>${its.map(x=>`<article class="item"><h3>${x.s&&x.s[0]?orig(x.s[0][2],x.s[0][0],x.t,esc(x.t)):esc(x.t)}</h3><p>${esc(x.p)}</p><div class="src">${(x.s||[]).map(s=>`<span>${esc(s[0])} · ${esc(s[1])} · ${orig(s[2],s[0],x.t)}</span>`).join("")}</div></article>`).join("")}</section>`}).join("");
  return html||`<p class="msg">이 분야의 기사가 없습니다.</p>`;
 }
 function filtersHTML(D){return CATS.map(([k,n])=>`<button type="button" data-k="${k}" aria-pressed="${k===cur}">${n}${k==="all"?"":" "+(D.news||[]).filter(x=>x.c===k).length}</button>`).join("")}
@@ -204,6 +216,7 @@ async function homeView(){
  main.innerHTML=`<section class="top"><div><h2>오늘의 핵심</h2>${keyHTML(D)}<a class="more" href="#today">오늘 브리핑 전체 보기 →</a></div>${numsHTML(D)}</section>
  ${aaHTML(D)}
  <section><h2 style="margin-top:26px">분야별 바로가기</h2><div class="cats" style="padding-top:6px">${cats}</div></section>
+ <nav class="quick" aria-label="바로가기"><a class="btn" href="https://project.seoul.go.kr" target="_blank" rel="noopener">프로젝트 서울 (서울시 설계공모) ↗</a><a class="btn" href="https://www.aaarchigroup.com/news" target="_blank" rel="noopener">AA아키그룹 뉴스룸 ↗</a></nav>
  <section class="recent"><h2>최근 브리핑</h2>${IDX.slice(0,7).map(dayRow).join("")}${IDX.length>7?`<a class="more" href="#archive">지난 브리핑 모두 보기 →</a>`:""}</section>`;
  main.querySelectorAll(".cat").forEach(b=>b.addEventListener("click",()=>{cur=b.dataset.k;try{localStorage.setItem("brief-cat",cur)}catch(err){}location.hash="today"}));
 }
@@ -215,6 +228,22 @@ function dayView(D){
  <nav class="filters" id="filters" aria-label="분야 필터">${filtersHTML(D)}</nav><div class="grid${cur==="all"?"":" one"}" id="grid">${newsHTML(D)}</div>${cal}`;
  document.getElementById("filters").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;cur=b.dataset.k;try{localStorage.setItem("brief-cat",cur)}catch(err){}
   document.getElementById("filters").innerHTML=filtersHTML(D);const gr=document.getElementById("grid");gr.className="grid"+(cur==="all"?"":" one");gr.innerHTML=newsHTML(D)});
+}
+
+/* ---------- AA 소식 ---------- */
+async function aaView(){
+ dnav.style.display="none";dl.textContent="AA아키그룹 관련 보도 모아보기";
+ main.innerHTML=`<p class="msg">불러오는 중입니다.</p>`;
+ const days=IDX.slice(0,90);
+ const all=await Promise.all(days.map(x=>getDay(x.date).catch(()=>null)));
+ const seen=new Set(),items=[];
+ all.forEach(D=>{if(!D)return;const A=D.aa||{};[...(A.today||[]),...(A.recent||[])].forEach(x=>{const u=x&&x.u;if(!u||seen.has(u))return;seen.add(u);items.push(x)})});
+ items.sort((a,b)=>String(b.d||"").localeCompare(String(a.d||"")));
+ const latest=all.find(Boolean),sig=latest&&latest.aa&&latest.aa.signal;
+ main.innerHTML=`<section class="aav"><h2>AA아키그룹 소식</h2><p class="lbl">매일 브리핑에서 찾은 회사 관련 보도를 날짜순으로 모았어요. 제목을 누르면 원문이 열려요.</p>
+ ${sig?`<p class="sig" style="padding:10px 12px;background:var(--panel)"><b>최근 시장 신호</b> · ${esc(sig)}</p>`:""}
+ ${items.length?`<ul class="list">${items.map(x=>`<li><time>${esc(x.d)}</time><div><b>${orig(x.u,"AA아키그룹 관련 보도",x.t,esc(x.t))}</b>${x.p?`<span class="lbl">${esc(x.p)}</span>`:""}</div></li>`).join("")}</ul>`:`<p class="msg">아직 모인 보도가 없습니다.</p>`}
+ <div class="links"><a class="btn" href="https://www.aaarchigroup.com/news" target="_blank" rel="noopener">회사 뉴스룸 바로가기 ↗</a></div></section>`;
 }
 
 /* ---------- 지난 브리핑 ---------- */
@@ -244,6 +273,8 @@ function closeReader(){
  rFrame.src="about:blank";if(lastFocus)lastFocus.focus();
 }
 document.addEventListener("click",e=>{
+ const card=e.target.closest(".item");
+ if(card&&!e.target.closest("a")){const f=card.querySelector("a.orig");if(f){openReader(f.href,f.dataset.src,f.dataset.ttl);return}}
  const a=e.target.closest("a.orig");
  if(a&&/^https?:/.test(a.getAttribute("href"))&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){e.preventDefault();openReader(a.href,a.dataset.src,a.dataset.ttl);return}
  if(e.target.closest("[data-close]"))closeReader();
@@ -251,10 +282,11 @@ document.addEventListener("click",e=>{
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&reader.classList.contains("open"))closeReader()});
 
 /* ---------- 라우팅 ---------- */
-function setTab(id){["vHome","vToday","vArc"].forEach(t=>{const el=document.getElementById(t);if(t===id)el.setAttribute("aria-current","page");else el.removeAttribute("aria-current")})}
+function setTab(id){["vHome","vToday","vAA","vArc"].forEach(t=>{const el=document.getElementById(t);if(t===id)el.setAttribute("aria-current","page");else el.removeAttribute("aria-current")})}
 async function route(){
  const h=location.hash.slice(1);
  if(h==="archive"){setTab("vArc");arcView();return}
+ if(h==="aa"){setTab("vAA");await aaView();return}
  if(h===""||h==="home"){setTab("vHome");await homeView();return}
  setTab("vToday");
  const want=h.startsWith("d-")?h.slice(2):null;
