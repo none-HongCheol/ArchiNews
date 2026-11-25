@@ -119,7 +119,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .arcg b{font:700 16px/1.35 "Noto Serif KR",serif}
 .arcg span{font-size:13px;color:var(--mute)}
 /* 홈: 신문 1면 (큰 화면에서는 한 화면에 맞춤) */
-.front{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:34px;padding:18px 0 22px}
+.front{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:30px;padding:18px 0 22px}
 .front h3{font:700 18px/1.3 "Noto Serif KR",serif;margin:0 0 4px;border-bottom:2px solid var(--ink);padding-bottom:6px}
 .fmain{display:flex;flex-direction:column;gap:16px;min-height:0}
 .flead{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:28px;border-bottom:1px solid var(--rule);padding-bottom:16px}
@@ -134,14 +134,14 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .fkey .n{color:var(--red)}
 .fmore{margin-top:auto;padding-top:8px;font-size:14px;font-weight:700;color:var(--red);text-decoration:none}
 .fmore:hover{text-decoration:underline}
-.fcols{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.fcols{flex:1;min-height:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px}
 .fcol{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden}
 .ftop{display:flex;flex-direction:column;gap:6px}
-.fh{font:700 18px/1.35 "Noto Serif KR",serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.fsum{margin:0;font-size:14px;line-height:1.55;color:var(--mute);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.fl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:15px;line-height:1.45;padding-top:8px;border-top:1px solid var(--hair)}
+.fh{font:700 16px/1.4 "Noto Serif KR",serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fsum{margin:0;font-size:13px;line-height:1.55;color:var(--mute);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fl{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;line-height:1.45;padding-top:8px;border-top:1px solid var(--hair)}
 .front a.orig{text-decoration:none;color:var(--ink)}
-.front a.orig:hover .fH,.front a.orig:hover .fh,.front a.orig:hover .fl{text-decoration:underline}
+.front a.orig:hover .fH,.front a.orig:hover .fh,.front a.orig:hover .fl,.front a.orig:hover .fk{text-decoration:underline}
 .fnone{margin:0;font-size:14px;color:var(--mute)}
 .fside{display:flex;flex-direction:column;gap:10px;border-left:1px solid var(--rule);padding-left:28px;min-height:0;overflow:hidden}
 .faa{background:var(--aa);color:#fff;padding:14px 16px;display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
@@ -152,7 +152,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .fps small{display:block;font-size:12px;color:var(--slate)}
 .fps:hover{text-decoration:underline}
 .fcal{margin:0;font-size:15px;line-height:1.5}
-@media(min-width:1100px) and (min-height:700px){
+@media(min-width:1500px) and (min-height:700px){
  body.fit .wrap{max-width:none;height:100vh;display:flex;flex-direction:column;padding:0 40px}
  body.fit .mast{padding:14px 0 10px}
  body.fit .mast h1{font-size:38px}
@@ -161,6 +161,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
  body.fit .front{height:100%;box-sizing:border-box}
  body.fit .foot{display:none}
 }
+@media(max-width:1499px){.fcols{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:1100px){.front{grid-template-columns:minmax(0,1fr)}.fside{border-left:0;padding-left:0}.fcols{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.flead{grid-template-columns:minmax(0,1fr)}.fkey{border-left:0;padding-left:0}.fcols{grid-template-columns:minmax(0,1fr)}}
 /* 지난 브리핑 */
@@ -278,12 +279,18 @@ async function homeView(){
  const words=t=>new Set(String(t||"").replace(/[^\p{L}\p{N}]+/gu," ").split(" ").filter(w=>w.length>1));
  const k0=words((D.key&&D.key[0]&&D.key[0].b)||"");
  let lead=news[0],best=-1;news.forEach(n=>{let c=0;words(n.t).forEach(w=>{if(k0.has(w))c++});if(c>best){best=c;lead=n}});
+ /* 오늘의 핵심: 머리기사와 같은 내용은 빼고, 모자라면 다른 분야 첫 기사로 채움 */
+ const lw=words(lead&&lead.t);
+ const overlap=t=>{let c=0;words(t).forEach(w=>{if(lw.has(w))c++});return c};
+ let keys=(D.key||[]).map(k=>({b:k.b,t:k.t,n:null}));
+ let drop=-1,dmax=1;keys.forEach((k,i)=>{const o=overlap(k.b+" "+k.t);if(o>dmax){dmax=o;drop=i}});
+ if(drop>=0)keys.splice(drop,1);
+ for(const [k] of CATS.slice(1)){if(keys.length>=3)break;const n=news.find(x=>x.c===k&&x!==lead&&!keys.some(y=>y.n===x)&&overlap(x.t)<2);if(n)keys.push({b:n.t,t:"",n})}
  const catName=Object.fromEntries(CATS);
  const src=n=>n.s&&n.s[0]?`${esc(n.s[0][0])} · ${esc(n.s[0][1])}`:"";
  const link=(n,cls,label)=>n.s&&n.s[0]?orig(n.s[0][2],n.s[0][0],n.t,`<span class="${cls}">${label}</span>`):`<span class="${cls}">${label}</span>`;
- const COLS=[["시공 수주",["build"]],["설계·서울시 공모",["design","seoul"]],["공공 발주·경기",["public","market"]],["업계·금융",["biz"]]];
- const cols=COLS.map(([name,ks])=>{
-  const its=news.filter(n=>ks.includes(n.c)&&n!==lead);
+ const cols=CATS.slice(1).map(([k,name])=>{
+  const its=news.filter(n=>n.c===k);
   if(!its.length)return `<div class="fcol"><h3>${name}</h3><p class="fnone">오늘은 새 기사가 없어요.</p></div>`;
   const [f,...rest]=its;
   return `<div class="fcol"><h3>${name}</h3><div class="ftop">${link(f,"fh",esc(f.t))}<p class="fsum">${esc(f.p)}</p><span class="fsrc">${src(f)}</span></div>${rest.map(n=>link(n,"fl",esc(n.t))).join("")}</div>`;
@@ -298,7 +305,7 @@ async function homeView(){
  <div class="fmain">
   <article class="flead">
    <div class="fleadL"><span class="fkick">머리기사 · ${esc(catName[lead.c]||"")}</span>${link(lead,"fH",esc(lead.t))}<p class="fleadP">${esc(lead.p)}</p><span class="fsrc">${src(lead)}</span></div>
-   <div class="fkey"><b>오늘의 핵심</b>${(D.key||[]).map((k,i)=>`<p><b class="n">${i+1}</b> ${esc(k.b)}</p>`).join("")}<a class="fmore" href="#today">오늘 브리핑 전체(요약 포함) →</a></div>
+   <div class="fkey"><b>오늘의 핵심</b>${keys.slice(0,3).map((k,i)=>`<p><b class="n">${i+1}</b> ${k.n?link(k.n,"fk",esc(k.b)):esc(k.b)}</p>`).join("")}<a class="fmore" href="#today">오늘 브리핑 전체(요약 포함) →</a></div>
   </article>
   <div class="fcols">${cols}</div>
  </div>
