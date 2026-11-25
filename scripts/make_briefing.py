@@ -553,8 +553,79 @@ def validate(raw: dict, day: dt.date) -> dict:
     return out
 
 
+# ---------------------------------------------------------------- 프로젝트 서울 목록
+PS_BASE = "https://project.seoul.go.kr"
+
+
+def _strip(html_text: str) -> str:
+    import html as _html
+    text = _html.unescape(_html.unescape(re.sub(r"<[^>]+>", " ", html_text)))
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _fetch_page(url: str) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (daily-briefing; +github actions)",
+                                               "Accept-Language": "ko-KR,ko;q=0.9"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def parse_ps_notices(page: str) -> list:
+    out = []
+    for href, body in re.findall(r'<a class="ps-notice-row[^"]*"\s+href="([^"]+)"[^>]*>(.*?)</a>', page, re.S):
+        dt = re.search(r'class="dt[^"]*"[^>]*>(.*?)</span>', body, re.S)
+        src = re.search(r'class="src"[^>]*>(.*?)</span>', body, re.S)
+        src_t = _strip(src.group(1)).strip("[]") if src else ""
+        ttl = _strip(body)
+        if dt:
+            ttl = ttl.replace(_strip(dt.group(1)), "", 1).strip()
+        if src:
+            ttl = ttl.replace(_strip(src.group(1)), "", 1).strip()
+        out.append({"d": _strip(dt.group(1)) if dt else "", "c": src_t, "t": ttl, "u": PS_BASE + href.replace("&amp;", "&")})
+    return out
+
+
+def parse_ps_archive(page: str) -> list:
+    out = []
+    for href, body in re.findall(r'<a class="ps-cptt-card"\s+href="(/view/viewDetailArchive\.do\?[^"]+)"[^>]*>(.*?)</a>', page, re.S):
+        badges = [_strip(b) for b in re.findall(r'<span class="ps-arv-badge[^"]*"[^>]*>(.*?)</span>', body, re.S)]
+        title = re.search(r"<h2[^>]*>(.*?)</h2>", body, re.S)
+        meta = re.search(r'class="ps-arv-submeta"[^>]*>(.*?)</p>', body, re.S)
+        rest = body
+        for part in (title.group(0) if title else "", meta.group(0) if meta else ""):
+            rest = rest.replace(part, " ")
+        rest = re.sub(r'<span class="ps-arv-badge[^"]*"[^>]*>.*?</span>', " ", rest, flags=re.S)
+        out.append({"stage": " · ".join(b for b in badges if b), "t": _strip(title.group(1)) if title else "",
+                    "meta": _strip(meta.group(1)) if meta else "", "info": _strip(rest), "u": PS_BASE + href.replace("&amp;", "&")})
+    return out
+
+
+def update_project_seoul() -> None:
+    """프로젝트 서울 공모알림·아카이브 목록을 data/project_seoul.json 에 저장합니다. 실패하면 이전 파일을 그대로 둡니다."""
+    path = DATA / "project_seoul.json"
+    old = load_json(path, {})
+    try:
+        notices = parse_ps_notices(_fetch_page(PS_BASE + "/view/viewListNotice.do?noticeType=CPTT"))
+        archive = parse_ps_archive(_fetch_page(PS_BASE + "/view/viewListArchive.do"))
+    except (urllib.error.URLError, TimeoutError, OSError) as e:
+        print(f"[프로젝트 서울] 목록을 가져오지 못해 이전 목록을 유지합니다: {e}")
+        return
+    if not notices and not archive:
+        print("[프로젝트 서울] 목록이 비어 있어 이전 목록을 유지합니다(페이지 구조가 바뀌었을 수 있음).")
+        return
+    data = {"updated": dt.datetime.now(KST).strftime("%Y-%m-%d %H:%M"),
+            "notices": notices[:30] or old.get("notices", []), "archive": archive[:30] or old.get("archive", [])}
+    DATA.mkdir(exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"[프로젝트 서울] 공모알림 {len(data['notices'])}건, 아카이브 {len(data['archive'])}건 저장")
+
+
 # ---------------------------------------------------------------- 실행
 def main() -> None:
+    if os.environ.get("BRIEFING_ONLY") == "project_seoul":
+        update_project_seoul()
+        return
+    update_project_seoul()
     day = today_kst()
     index = load_json(DATA / "index.json", [])
     if not isinstance(index, list):
