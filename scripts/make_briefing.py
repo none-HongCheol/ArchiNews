@@ -360,6 +360,8 @@ def gather_openwebui(day: dt.date, index: list) -> dict:
     try:
         raw = extract_json(call_openwebui(aa_prompt, day, True, "aa"))
         aa = {k: raw.get(k, aa[k]) for k in aa}
+        if re.search(r"(검색|확인)[^.]{0,20}(못|제한|없)", str(aa.get("signal") or "")):
+            aa["signal"] = ""  # 작업 과정 메모는 싣지 않습니다.
         print(f"[aa] 새 소식 {len(raw.get('today') or [])}건")
     except (RuntimeError, ValueError, json.JSONDecodeError) as e:
         print(f"[aa] 건너뜀: {e}")
