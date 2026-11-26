@@ -187,7 +187,8 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
  body.fit .psg .pane{padding-right:10px}
  body.fit .psv .arcg{grid-template-columns:repeat(3,minmax(0,1fr))}
  body.fit .arcl{flex:1;columns:2;column-gap:48px}
- body.fit .arcl .mon{break-after:avoid;margin-top:0}
+ body.fit .arcl .mon{column-span:all;break-after:avoid;margin:14px 0 6px}
+ body.fit .arcl .mon:first-child{margin-top:0}
  body.fit .arcl .day{break-inside:avoid}
 }
 @media(min-width:1500px) and (min-height:700px){
@@ -232,7 +233,7 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .arc .tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
 .arc input{font:16px "Noto Sans KR",sans-serif;min-height:44px;padding:0 12px;border:1px solid var(--hair);background:var(--bg);color:var(--ink);width:min(100%,360px)}
 .mon{font:700 18px "Noto Serif KR",serif;margin:22px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
-.day{display:grid;grid-template-columns:8.5em minmax(0,1fr) auto;gap:14px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--hair);text-decoration:none}
+.day{display:grid;grid-template-columns:max-content minmax(0,1fr) auto;gap:16px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--hair);text-decoration:none}
 .day:hover .h{text-decoration:underline}
 .day .d{font-weight:700;white-space:nowrap;color:var(--ink)}
 .day .h{color:var(--ink)}
