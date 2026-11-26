@@ -413,14 +413,14 @@ async function psView(){
  main.innerHTML=`<p class="msg">불러오는 중입니다.</p>`;
  let P={};try{const r=await fetch("data/project_seoul.json",{cache:"no-store"});if(r.ok)P=await r.json()}catch(e){}
  const ext=(u,label)=>`<a class="btn" href="${url(u)}" target="_blank" rel="noopener">${label} ↗</a>`;
- const N=P.notices||[],A=P.archive||[];
+ const N=P.notices||[],A=P.results||[];
  main.innerHTML=`<section class="psv"><h2>프로젝트 서울</h2>
- <p class="lbl">서울시 설계공모 통합 누리집의 공모알림과 설계·건설 아카이브를 매일 아침 모아 와요.${P.updated?` 마지막 갱신 ${esc(P.updated)}.`:""} 프로젝트 서울은 다른 사이트 안에서 열리지 않게 설정돼 있어서, 항목을 누르면 새 탭으로 열려요.</p>
+ <p class="lbl">서울시 설계공모 통합 누리집의 공모알림과 Competitions의 공모 결과를 매일 아침 모아 와요.${P.updated?` 마지막 갱신 ${esc(P.updated)}.`:""} 프로젝트 서울은 다른 사이트 안에서 열리지 않게 설정돼 있어서, 항목을 누르면 새 탭으로 열려요.</p>
  <div class="links">${ext(PS+"/view/viewListCptt.do?stage=open","진행 중 공고")}${ext(PS+"/view/viewListCptt.do?stage=review","심사")}${ext(PS+"/view/viewListCptt.do?stage=results","결과")}${ext(PS+"/view/viewListArchive.do","설계·건설 아카이브")}${ext(PS+"/view/viewListArchive.do?tab=award","서울시건축상")}</div>
  <div class="psg"><div class="pane"><h3>공모알림</h3>
  ${N.length?`<ul class="nl">${N.map(x=>`<li><a href="${url(x.u)}" target="_blank" rel="noopener"><time>${esc(x.d)}</time><span><small>${esc(x.c)}</small><b>${esc(x.t)}</b></span></a></li>`).join("")}</ul>`:`<p class="msg">아직 가져온 공모알림이 없습니다.</p>`}</div>
- <div class="pane"><h3>설계·건설 아카이브</h3>
- ${A.length?`<div class="arcg">${A.map(x=>`<a href="${url(x.u)}" target="_blank" rel="noopener"><span class="st">${esc(x.stage)}</span><b>${esc(x.t)}</b><span>${esc(x.meta)}</span><span>${esc(x.info)}</span></a>`).join("")}</div>`:`<p class="msg">아직 가져온 아카이브가 없습니다.</p>`}</div></div>
+ <div class="pane"><h3>공모 결과</h3>
+ ${A.length?`<div class="arcg">${A.map(x=>`<a href="${url(x.u)}" target="_blank" rel="noopener"><span class="st">${esc(x.stage)}</span><b>${esc(x.t)}</b><span>${esc(x.meta)}</span></a>`).join("")}</div>`:`<p class="msg">공모 결과를 아직 가져오지 못했어요. 내일 아침 갱신 때 채워집니다.</p>`}</div></div>
  </section>`;
 }
 

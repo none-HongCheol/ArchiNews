@@ -32,6 +32,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      # 프로젝트 서울 'Competitions > 결과' 탭은 화면에서 그려져서 보이지 않는 브라우저로 읽습니다.
+      - name: 보이지 않는 브라우저 준비 (프로젝트 서울 공모 결과용)
+        continue-on-error: true
+        run: |
+          pip install --quiet playwright
+          python -m playwright install --with-deps chromium
+
       - name: 브리핑 생성 (회사 Open WebUI)
         env:
           BRIEFING_BACKEND: ${{ vars.BRIEFING_BACKEND || 'openwebui' }}

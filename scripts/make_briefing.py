@@ -697,24 +697,67 @@ def parse_ps_archive(page: str) -> list:
     return out
 
 
+def fetch_ps_results() -> list:
+    """Competitions > 결과 탭. 이 탭은 페이지가 열린 뒤 화면에서 그려지므로 보이지 않는 브라우저로 열어 카드를 읽습니다."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("[프로젝트 서울] playwright가 없어 공모 결과를 건너뜁니다.")
+        return []
+    js = """els => els.map(a => ({
+        u: a.href,
+        t: (a.querySelector('h3') || {}).innerText || '',
+        org: (a.querySelector('.ps-cptt-org') || {}).innerText || '',
+        st: [...a.querySelectorAll('.ps-sticker')].map(s => s.innerText.trim()).filter(Boolean).join(' · ')
+    }))"""
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        try:
+            page = browser.new_page(locale="ko-KR")
+            page.goto(PS_BASE + "/view/viewListCptt.do?stage=results", wait_until="networkidle", timeout=60000)
+            page.wait_for_selector("a.ps-cptt-card", timeout=30000)
+            more = page.locator("button:has-text('더보기'), a:has-text('더보기')")
+            if more.count():
+                try:
+                    more.first.click(timeout=5000)
+                    page.wait_for_timeout(2500)
+                except Exception:
+                    pass
+            items = page.eval_on_selector_all("a.ps-cptt-card", js)
+        finally:
+            browser.close()
+    out, seen = [], set()
+    for i in items:
+        t, u = _strip(i.get("t", "")), i.get("u", "")
+        if not t or u in seen:
+            continue
+        seen.add(u)
+        out.append({"stage": _strip(i.get("st", "")), "t": t, "meta": _strip(i.get("org", "")), "info": "", "u": u})
+    return out
+
+
 def update_project_seoul() -> None:
-    """프로젝트 서울 공모알림·아카이브 목록을 data/project_seoul.json 에 저장합니다. 실패하면 이전 파일을 그대로 둡니다."""
+    """프로젝트 서울 공모알림과 Competitions > 결과 목록을 data/project_seoul.json 에 저장합니다. 실패하면 이전 파일을 그대로 둡니다."""
     path = DATA / "project_seoul.json"
     old = load_json(path, {})
     try:
         notices = parse_ps_notices(_fetch_page(PS_BASE + "/view/viewListNotice.do?noticeType=CPTT"))
-        archive = parse_ps_archive(_fetch_page(PS_BASE + "/view/viewListArchive.do"))
     except (urllib.error.URLError, TimeoutError, OSError) as e:
-        print(f"[프로젝트 서울] 목록을 가져오지 못해 이전 목록을 유지합니다: {e}")
-        return
-    if not notices and not archive:
+        print(f"[프로젝트 서울] 공모알림을 가져오지 못했습니다: {e}")
+        notices = []
+    try:
+        results = fetch_ps_results()
+    except Exception as e:  # 결과 탭을 못 읽어도 나머지는 계속합니다.
+        print(f"[프로젝트 서울] 공모 결과를 가져오지 못했습니다: {e}")
+        results = []
+    if not notices and not results:
         print("[프로젝트 서울] 목록이 비어 있어 이전 목록을 유지합니다(페이지 구조가 바뀌었을 수 있음).")
         return
     data = {"updated": dt.datetime.now(KST).strftime("%Y-%m-%d %H:%M"),
-            "notices": notices[:30] or old.get("notices", []), "archive": archive[:30] or old.get("archive", [])}
+            "notices": notices[:30] or old.get("notices", []), "results": results[:24] or old.get("results", [])}
     DATA.mkdir(exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"[프로젝트 서울] 공모알림 {len(data['notices'])}건, 아카이브 {len(data['archive'])}건 저장")
+    print(f"[프로젝트 서울] 공모알림 {len(data['notices'])}건, 공모 결과 {len(data['results'])}건 저장")
 
 
 # ---------------------------------------------------------------- 실행
