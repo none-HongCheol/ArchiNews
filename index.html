@@ -216,16 +216,19 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
  body.fit .dvL .cal{padding:12px 0 0}
  body.fit .dvL .cal td{padding:6px;font-size:14.5px;line-height:1.5}
  /* 프로젝트 서울: 공모알림 2단, 아카이브 2열 */
- body.fit .psg{grid-template-columns:minmax(0,1.3fr) minmax(0,1.15fr)}
+ body.fit .psg{grid-template-columns:minmax(0,1fr) minmax(0,2.3fr)}
  body.fit .psg h3{margin-bottom:4px}
- body.fit .psg .nl{columns:2;column-gap:28px}
+ body.fit .psg .nl{columns:1}
  body.fit .psg .nl li{break-inside:avoid}
  body.fit .psg .nl a{grid-template-columns:5.6em minmax(0,1fr);gap:8px;padding:7px 0;font-size:14.5px;line-height:1.45}
  body.fit .psg .nl small{font-size:12px}
  body.fit .psv .arcg{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- body.fit .psv .arcg a{padding:8px 12px;gap:2px;line-height:1.4}
- body.fit .psv .arcg b{font-size:15px}
- body.fit .psv .arcg span{font-size:12.5px}
+ body.fit .psv .arcg a{padding:10px;line-height:1.4}
+ body.fit .psv .arcg b{font-size:17px;line-height:1.4}
+ body.fit .psv .arcg.res a{grid-template-columns:200px minmax(0,1fr);gap:16px}
+ body.fit .psv .arcg.res img,body.fit .psv .arcg.res i{width:200px;height:140px}
+ body.fit .psv .arcg.res .tx{gap:4px}
+ body.fit .psv .arcg span{font-size:13.5px}
  body.fit .psv .links{margin:8px 0 0}
  body.fit .psv>.lbl{margin:0}
 }
@@ -422,7 +425,7 @@ async function psView(){
  <p class="lbl">서울시 설계공모 통합 누리집의 공모알림과 Competitions의 공모 결과를 매일 아침 모아 와요.${P.updated?` 마지막 갱신 ${esc(P.updated)}.`:""} 프로젝트 서울은 다른 사이트 안에서 열리지 않게 설정돼 있어서, 항목을 누르면 새 탭으로 열려요.</p>
  <div class="links">${ext(PS+"/view/viewListCptt.do?stage=open","진행 중 공고")}${ext(PS+"/view/viewListCptt.do?stage=review","심사")}${ext(PS+"/view/viewListCptt.do?stage=results","결과")}${ext(PS+"/view/viewListArchive.do","설계·건설 아카이브")}${ext(PS+"/view/viewListArchive.do?tab=award","서울시건축상")}</div>
  <div class="psg"><div class="pane"><h3>공모알림</h3>
- ${N.length?`<ul class="nl">${N.map(x=>`<li><a href="${url(x.u)}" target="_blank" rel="noopener"><time>${esc(x.d)}</time><span><small>${esc(x.c)}</small><b>${esc(x.t)}</b></span></a></li>`).join("")}</ul>`:`<p class="msg">아직 가져온 공모알림이 없습니다.</p>`}</div>
+ ${N.length?`<ul class="nl">${N.slice(0,12).map(x=>`<li><a href="${url(x.u)}" target="_blank" rel="noopener"><time>${esc(x.d)}</time><span><small>${esc(x.c)}</small><b>${esc(x.t)}</b></span></a></li>`).join("")}</ul>`:`<p class="msg">아직 가져온 공모알림이 없습니다.</p>`}</div>
  <div class="pane"><h3>공모 결과</h3>
  ${A.length?`<div class="arcg res">${A.map(x=>{const u=/viewDetailCptt/.test(x.u)&&!x.u.includes("#")?x.u+"#submissions":x.u;
   return `<a href="${url(u)}" target="_blank" rel="noopener" title="당선작 보기">${x.img?`<img src="${url(x.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<i></i>`}<span class="tx"><span class="st">${esc(x.stage)}</span><b>${esc(x.t)}</b><span>${esc(x.meta)}</span></span></a>`}).join("")}</div>`:`<p class="msg">공모 결과를 아직 가져오지 못했어요. 내일 아침 갱신 때 채워집니다.</p>`}</div></div>
