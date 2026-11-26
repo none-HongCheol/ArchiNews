@@ -119,6 +119,10 @@ h2{font:700 22px/1.3 "Noto Serif KR",serif;margin:0 0 12px}
 .arcg .st{font-size:12px;font-weight:700;color:var(--red)}
 .arcg b{font:700 16px/1.35 "Noto Serif KR",serif}
 .arcg span{font-size:13px;color:var(--mute)}
+.arcg.res a{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center}
+.arcg.res img,.arcg.res i{width:96px;height:68px;object-fit:cover;background:var(--panel);display:block}
+.arcg.res .tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.arcg.res b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 /* 홈: 신문 1면 (큰 화면에서는 한 화면에 맞춤) */
 .front{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:30px;padding:18px 0 22px}
 .front h3{font:700 18px/1.3 "Noto Serif KR",serif;margin:0 0 4px;border-bottom:2px solid var(--ink);padding-bottom:6px}
@@ -420,7 +424,8 @@ async function psView(){
  <div class="psg"><div class="pane"><h3>공모알림</h3>
  ${N.length?`<ul class="nl">${N.map(x=>`<li><a href="${url(x.u)}" target="_blank" rel="noopener"><time>${esc(x.d)}</time><span><small>${esc(x.c)}</small><b>${esc(x.t)}</b></span></a></li>`).join("")}</ul>`:`<p class="msg">아직 가져온 공모알림이 없습니다.</p>`}</div>
  <div class="pane"><h3>공모 결과</h3>
- ${A.length?`<div class="arcg">${A.map(x=>`<a href="${url(x.u)}" target="_blank" rel="noopener"><span class="st">${esc(x.stage)}</span><b>${esc(x.t)}</b><span>${esc(x.meta)}</span></a>`).join("")}</div>`:`<p class="msg">공모 결과를 아직 가져오지 못했어요. 내일 아침 갱신 때 채워집니다.</p>`}</div></div>
+ ${A.length?`<div class="arcg res">${A.map(x=>{const u=/viewDetailCptt/.test(x.u)&&!x.u.includes("#")?x.u+"#submissions":x.u;
+  return `<a href="${url(u)}" target="_blank" rel="noopener" title="당선작 보기">${x.img?`<img src="${url(x.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<i></i>`}<span class="tx"><span class="st">${esc(x.stage)}</span><b>${esc(x.t)}</b><span>${esc(x.meta)}</span></span></a>`}).join("")}</div>`:`<p class="msg">공모 결과를 아직 가져오지 못했어요. 내일 아침 갱신 때 채워집니다.</p>`}</div></div>
  </section>`;
 }
 

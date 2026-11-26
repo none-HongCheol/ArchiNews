@@ -708,6 +708,7 @@ def fetch_ps_results() -> list:
         u: a.href,
         t: (a.querySelector('h3') || {}).innerText || '',
         org: (a.querySelector('.ps-cptt-org') || {}).innerText || '',
+        img: (a.querySelector('.ps-cptt-poster img') || {}).src || '',
         st: [...a.querySelectorAll('.ps-sticker')].map(s => s.innerText.trim()).filter(Boolean).join(' · ')
     }))"""
     with sync_playwright() as p:
@@ -745,7 +746,10 @@ def fetch_ps_results() -> list:
         if not t or u in seen:
             continue
         seen.add(u)
-        out.append({"stage": _strip(i.get("st", "")), "t": t, "meta": _strip(i.get("org", "")), "info": "", "u": u})
+        img = i.get("img", "")
+        out.append({"stage": _strip(i.get("st", "")), "t": t, "meta": _strip(i.get("org", "")), "info": "",
+                    "u": u.split("#")[0] + "#submissions",   # 상세 페이지의 '당선작' 부분으로 바로
+                    "img": img if img.startswith(PS_BASE) else ""})
     return out
 
 
