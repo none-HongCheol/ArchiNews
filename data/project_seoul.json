@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-26 08:58",
+ "updated": "2026-11-26 09:37",
  "notices": [
   {
    "d": "2026.11.25",
@@ -122,83 +122,5 @@
    "u": "https://project.seoul.go.kr/view/viewDetailCptt.do?cpttMstSeq=738#notices"
   }
  ],
- "archive": [
-  {
-   "stage": "공사",
-   "t": "서남병원 증축 및 리모델링",
-   "meta": "공모 · 서남병원 증축 및 리모델링 설계공모",
-   "info": "안정웅 · 정재희 2026",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=9"
-  },
-  {
-   "stage": "공사",
-   "t": "거여119안전센터 이전 신축",
-   "meta": "공모 · 거여119안전센터 이전 신축",
-   "info": "업무시설 강상혁 2026",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=7"
-  },
-  {
-   "stage": "공사",
-   "t": "서울소방학교 실화재 훈련장 건립",
-   "meta": "공모 · 서울소방학교 실화재 훈련장 건립 설계공모",
-   "info": "교육연구시설 최영희 · 차지웅 · 이동기 · 박준구 · 오은주 · 이채영 2025",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=10"
-  },
-  {
-   "stage": "공사",
-   "t": "보라매병원 안심호흡기전문센터",
-   "meta": "공모 · 보라매병원 안심호흡기전문센터 건립사업 설계공모",
-   "info": "의료시설 김기영 2025",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=8"
-  },
-  {
-   "stage": "공사",
-   "t": "시립 반다비체육센터 증축",
-   "meta": "공모 · 시립 반다비체육센터 증축 설계공모",
-   "info": "운동시설 안태두 · 이대용 2024",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=11"
-  },
-  {
-   "stage": "설계 · WEB3D",
-   "t": "남부도로사업소 청사 이전 사업 설계공모",
-   "meta": "공모 · 남부도로사업소 청사 이전 사업 설계공모",
-   "info": "업무시설 박성환 · 조도연 · 박윤식 2024",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=1"
-  },
-  {
-   "stage": "설계 · WEB3D",
-   "t": "동물복지지원센터 강동 건립 설계공모",
-   "meta": "공모 · 동물복지지원센터 강동 건립 설계공모",
-   "info": "제2종근린생활시설 신호섭 2024",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=3"
-  },
-  {
-   "stage": "설계 · WEB3D",
-   "t": "노들 글로벌 예술섬 조성 국제지명 설계공모",
-   "meta": "공모 · 노들 글로벌 예술섬 조성 국제지명 설계공모",
-   "info": "문화및집회시설 Thomas Heatherwick · 진교남 · 최희경 · 손준서 · Billy Tan · Ulyong Moon · Neil Hubbard · Mary Suen · Pallavi Kumar · Brandon Gassner 2024",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=2"
-  },
-  {
-   "stage": "설계 · WEB3D",
-   "t": "서울시립도서관(동대문) 건립 설계공모",
-   "meta": "공모 · 서울시립도서관(동대문) 건립 설계공모",
-   "info": "교육연구시설 윤종원 · 최삼영 · 조남호 · 김기영 2023",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=4"
-  },
-  {
-   "stage": "설계 · WEB3D",
-   "t": "서리풀 개방형수장고 지명설계공모",
-   "meta": "공모 · 서리풀 개방형수장고 지명설계공모",
-   "info": "문화및집회시설 Jacques Herzog 2023",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=5"
-  },
-  {
-   "stage": "설계 · WEB3D",
-   "t": "【제1차】서울특별시 도시건축 창의혁신디자인 시범사업(2단계)",
-   "meta": "공모 · 【제1차】서울특별시 도시건축 창의혁신디자인 시범사업(2단계)",
-   "info": "기타 David Chipperfield Architects 2023",
-   "u": "https://project.seoul.go.kr/view/viewDetailArchive.do?cpttBizSeq=6"
-  }
- ]
+ "results": []
 }
