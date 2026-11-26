@@ -1,0 +1,35 @@
+{
+ "blocked": [
+  "dealsite.co.kr",
+  "www.ajunews.com",
+  "www.dailian.co.kr",
+  "www.mt.co.kr"
+ ],
+ "ok": [
+  "biz.heraldcorp.com",
+  "daily.hankooki.com",
+  "koreastocknews.com",
+  "m.sedaily.com",
+  "news.jkn.co.kr",
+  "view.asiae.co.kr",
+  "www.arunews.com",
+  "www.babytimes.co.kr",
+  "www.dnews.co.kr",
+  "www.etoday.co.kr",
+  "www.g-enews.com",
+  "www.hankyung.com",
+  "www.kcenews.kr",
+  "www.koscaj.com",
+  "www.krcom.co.kr",
+  "www.newsfun.kr",
+  "www.newspim.com",
+  "www.newswhoplus.com",
+  "www.newsworks.co.kr",
+  "www.sedaily.com",
+  "www.segye.com",
+  "www.seoulfn.com",
+  "www.tfmedia.co.kr",
+  "www.wowtv.co.kr",
+  "www.yna.co.kr"
+ ]
+}
