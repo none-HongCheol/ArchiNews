@@ -713,9 +713,22 @@ def fetch_ps_results() -> list:
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
-            page = browser.new_page(locale="ko-KR")
+            page = browser.new_page(locale="ko-KR", timezone_id="Asia/Seoul", viewport={"width": 1600, "height": 1000},
+                                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                                               "(KHTML, like Gecko) Chrome/130.0 Safari/537.36")
+            log = []
+            page.on("response", lambda r: log.append(f"{r.status} {r.request.method} {r.url[:120]}")
+                    if (".json" in r.url or r.status >= 400) else None)
+            page.on("console", lambda m: log.append(f"console.{m.type}: {m.text[:200]}") if m.type in ("error", "warning") else None)
             page.goto(PS_BASE + "/view/viewListCptt.do?stage=results", wait_until="networkidle", timeout=60000)
-            page.wait_for_selector("a.ps-cptt-card", timeout=30000)
+            try:
+                page.wait_for_selector("a.ps-cptt-card", timeout=30000)
+            except Exception:
+                print("[프로젝트 서울] 결과 카드가 안 보입니다. 진단:", page.title(),
+                      "| li", page.locator("li").count(), "| 카드", page.locator(".ps-cptt-card").count())
+                for line in log[:25]:
+                    print("   ", line)
+                raise
             more = page.locator("button:has-text('더보기'), a:has-text('더보기')")
             if more.count():
                 try:
