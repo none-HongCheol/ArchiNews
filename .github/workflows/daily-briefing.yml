@@ -11,7 +11,7 @@ on:
         description: "날짜(YYYY-MM-DD). 비우면 오늘"
         required: false
       only:
-        description: "project_seoul 을 넣으면 프로젝트 서울 목록만 갱신(AI 사용 안 함)"
+        description: "project_seoul = 프로젝트 서울만 갱신, frames = 언론사 사이트 안 열람 가능 여부만 확인 (둘 다 AI 사용 안 함)"
         required: false
 
 permissions:

@@ -718,7 +718,82 @@ def update_project_seoul() -> None:
 
 
 # ---------------------------------------------------------------- 실행
+# ---------------------------------------------------------------- 사이트 안 열람 가능 여부
+# 언론사 중에는 다른 사이트 안(iframe)에서 열리지 않게 막아 둔 곳이 있습니다.
+# 매일 새로 나온 언론사 주소를 한 번씩 확인해 data/noframe.json 에 적어 두면,
+# 화면에서 그 언론사 기사는 처음부터 새 탭으로 엽니다.
+SITE_HOST = "none-hongcheol.github.io"
+
+
+def _host(u: str) -> str:
+    try:
+        return urllib.parse.urlsplit(u).hostname or ""
+    except ValueError:
+        return ""
+
+
+def _frame_blocked(url: str):
+    """True: 막힘, False: 열림, None: 확인 못 함."""
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130 Safari/537.36",
+                                               "Accept-Language": "ko-KR,ko;q=0.9"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            h = r.headers
+    except urllib.error.HTTPError as e:
+        h = e.headers
+        if e.code >= 400 and not (h.get("X-Frame-Options") or h.get("Content-Security-Policy")):
+            return None
+    except Exception:
+        return None
+    xfo = (h.get("X-Frame-Options") or "").strip().upper()
+    if xfo and xfo != "ALLOWALL":
+        return True
+    for csp in h.get_all("Content-Security-Policy") or []:
+        m = re.search(r"frame-ancestors([^;]*)", csp, re.I)
+        if m:
+            v = m.group(1)
+            return not ("*" in v.split() or SITE_HOST in v)
+    return False
+
+
+def update_noframe(urls: list) -> None:
+    path = DATA / "noframe.json"
+    known = load_json(path, {})
+    blocked, ok = set(known.get("blocked") or []), set(known.get("ok") or [])
+    todo = {}
+    for u in urls:
+        h = _host(u)
+        if h and h not in blocked and h not in ok and h not in todo:
+            todo[h] = u
+    if todo:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(8) as ex:
+            for h, res in zip(todo, ex.map(_frame_blocked, todo.values())):
+                if res is True:
+                    blocked.add(h)
+                elif res is False:
+                    ok.add(h)
+    DATA.mkdir(exist_ok=True)
+    path.write_text(json.dumps({"blocked": sorted(blocked), "ok": sorted(ok)}, ensure_ascii=False, indent=1) + "\n",
+                    encoding="utf-8")
+    print(f"[열람 확인] 새로 본 언론사 {len(todo)}곳, 사이트 안에서 막힌 곳 총 {len(blocked)}곳")
+
+
+def brief_urls(brief: dict) -> list:
+    out = [x[2] for n in brief.get("news") or [] for x in n.get("s") or [] if len(x) > 2]
+    a = brief.get("aa") or {}
+    out += [x.get("u", "") for x in (a.get("today") or []) + (a.get("recent") or []) if isinstance(x, dict)]
+    return [u for u in out if u]
+
+
 def main() -> None:
+    if os.environ.get("BRIEFING_ONLY") == "frames":
+        index = load_json(DATA / "index.json", [])
+        urls = []
+        for e in (index if isinstance(index, list) else [])[:14]:
+            urls += brief_urls(load_json(DATA / f"{e.get('date')}.json", {}))
+        update_noframe(urls)
+        return
     if os.environ.get("BRIEFING_ONLY") == "project_seoul":
         update_project_seoul()
         return
@@ -762,6 +837,10 @@ def main() -> None:
 def publish(day: dt.date, index: list, brief: dict) -> None:
     head = brief.pop("_head")
     DATA.mkdir(exist_ok=True)
+    try:
+        update_noframe(brief_urls(brief))
+    except Exception as e:  # 확인이 실패해도 발행은 계속합니다.
+        print(f"[열람 확인] 건너뜀: {e}")
     (DATA / f"{day.isoformat()}.json").write_text(json.dumps(brief, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
     entry = {"date": day.isoformat(), "weekday": brief["weekday"], "head": head,

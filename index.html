@@ -298,6 +298,10 @@ const url=v=>/^https?:\/\//.test(String(v))?esc(v):"#";
 const main=document.getElementById("main"),dl=document.getElementById("dateLine"),dnav=document.getElementById("dnav");
 const prev=document.getElementById("prev"),next=document.getElementById("next");
 let IDX=[],cache={},cur="all",shown=null;
+/* 사이트 안에서 열리지 않게 막아 둔 언론사(매일 아침 확인) → 이 언론사 기사는 바로 새 탭으로 엽니다 */
+let BLOCKED=new Set();
+fetch("data/noframe.json",{cache:"no-store"}).then(r=>r.ok?r.json():{}).then(j=>{BLOCKED=new Set(j.blocked||[])}).catch(()=>{});
+const noFrame=u=>{try{const h=new URL(u).hostname;return BLOCKED.has(h)}catch(e){return false}};
 try{const v=localStorage.getItem("brief-cat");if(v&&CATS.some(c=>c[0]===v))cur=v}catch(e){}
 const fmt=(d,w)=>{const [y,m,dd]=d.split("-");return `${y}년 ${+m}월 ${+dd}일${w?` (${w})`:""}`};
 const getDay=async d=>{if(cache[d])return cache[d];const r=await fetch(`data/${d}.json`,{cache:"no-store"});if(!r.ok)throw new Error(r.status);return cache[d]=await r.json()};
@@ -446,9 +450,9 @@ function closeReader(){
 }
 document.addEventListener("click",e=>{
  const card=e.target.closest(".item");
- if(card&&!e.target.closest("a")){const f=card.querySelector("a.orig");if(f){openReader(f.href,f.dataset.src,f.dataset.ttl);return}}
+ if(card&&!e.target.closest("a")){const f=card.querySelector("a.orig");if(f){if(noFrame(f.href))window.open(f.href,"_blank","noopener");else openReader(f.href,f.dataset.src,f.dataset.ttl);return}}
  const a=e.target.closest("a.orig");
- if(a&&/^https?:/.test(a.getAttribute("href"))&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){e.preventDefault();openReader(a.href,a.dataset.src,a.dataset.ttl);return}
+ if(a&&/^https?:/.test(a.getAttribute("href"))&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!noFrame(a.href)){e.preventDefault();openReader(a.href,a.dataset.src,a.dataset.ttl);return}
  if(e.target.closest("[data-close]"))closeReader();
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&reader.classList.contains("open"))closeReader()});
